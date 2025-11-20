@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Schulte Focus Master</title>
+    <style>
+        /* --- TEMA MINIMALIS MODERN --- */
+        :root {
+            --bg: #f4f7f6;
+            --grid-bg: #ffffff;
+            --text: #2c3e50;
+            --accent: #3498db; /* Biru Tenang */
+            --highlight: #e74c3c; /* Merah Target */
+            --done: #2ecc71; /* Hijau Selesai */
+            --ad-h: 70px;
+        }
+        
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            :root { --bg: #1e1e1e; --grid-bg: #2d2d2d; --text: #ecf0f1; }
+        }
+
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Roboto', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* HEADER INFO */
+        #top-panel {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .info-badge {
+            background: var(--grid-bg);
+            padding: 10px 20px;
+            border-radius: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            font-size: 1.1rem;
+        }
+
+        /* AREA GAME */
+        #game-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        /* GRID KOTAK */
+        #schulte-grid {
+            display: grid;
+            gap: 10px;
+            background: var(--grid-bg);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            aspect-ratio: 1; /* Selalu kotak */
+        }
+
+        .cell {
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+            color: var(--text);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .cell:active { transform: scale(0.9); }
+        
+        /* Efek Visual */
+        .cell.correct { background: var(--done); color: white; border-color: var(--done); }
+        .cell.wrong { animation: shake 0.3s; background: var(--highlight); color: white; }
+
+        /* SCREENS */
+        .screen {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: var(--bg);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            z-index: 50;
+            padding: 20px;
+        }
+        .screen.active { display: flex; }
+
+        h1 { font-size: 2rem; color: var(--accent); margin-bottom: 10px; }
+        p { color: #7f8c8d; margin-bottom: 30px; line-height: 1.6; max-width: 400px; }
+
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none; padding: 15px 50px;
+            font-size: 1.2rem; border-radius: 50px;
+            font-weight: bold; cursor: pointer;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+        .btn:active { transform: scale(0.95); }
+
+        /* FOOTER IKLAN */
+        #ad-footer {
+            height: var(--ad-h);
+            min-height: var(--ad-h);
+            background: #000;
+            border-top: 1px solid #333;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 100;
+        }
+        .ad-scale { transform: scale(0.75); }
+
+        @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <div id="top-panel">
+        <div class="info-badge">Cari: <span id="ui-target" style="color:var(--accent)">1</span></div>
+        <div class="info-badge">⏱️ <span id="ui-time">0.0</span>s</div>
+    </div>
+
+    <!-- GAMEPLAY -->
+    <div id="game-container">
+        <div id="schulte-grid">
+            <!-- Angka digenerate JS -->
+        </div>
+        <p style="margin-top:20px; font-size:0.9rem; opacity:0.6;">Usahakan mata tetap fokus di tengah grid!</p>
+    </div>
+
+    <!-- SCREEN: MENU -->
+    <div id="s-menu" class="screen active">
+        <div style="font-size:4rem; margin-bottom:10px;">🔢</div>
+        <h1>Schulte Table</h1>
+        <p>Latih <i>Peripheral Vision</i> dan Kecepatan Baca.<br>Tekan angka <b>1 sampai 25</b> secara berurutan secepat mungkin.</p>
+        <button class="btn" onclick="game.start()">MULAI</button>
+    </div>
+
+    <!-- SCREEN: RESULT -->
+    <div id="s-result" class="screen">
+        <h2>SELESAI!</h2>
+        <p>Waktu total Anda:</p>
+        <h1 id="final-time" style="font-size:3.5rem; margin:0;">0.0s</h1>
+        <p id="final-msg">Luar Biasa!</p>
+        <button class="btn" onclick="game.start()">ULANGI</button>
+    </div>
+
+    <!-- IKLAN -->
+    <div id="ad-footer">
+        <div class="ad-scale">
+            <script type="text/javascript">
+                atOptions = {
+                    'key' : '2a28cd5411ae53a35cf4ec828d845d19',
+                    'format' : 'iframe',
+                    'height' : 60,
+                    'width' : 468,
+                    'params' : {}
+                };
+            </script>
+            <script type="text/javascript" src="https://www.highperformanceformat.com/2a28cd5411ae53a35cf4ec828d845d19/invoke.js"></script>
+        </div>
+    </div>
+
+    <script>
+        const game = {
+            gridSize: 5, // Standar Schulte Table adalah 5x5
+            totalCells: 25,
+            currentNum: 1,
+            startTime: 0,
+            timerInterval: null,
+            
+            gridEl: document.getElementById('schulte-grid'),
+            targetEl: document.getElementById('ui-target'),
+            timeEl: document.getElementById('ui-time'),
+
+            start: function() {
+                this.currentNum = 1;
+                this.totalCells = this.gridSize * this.gridSize;
+                this.screen('s-none'); // Hide screens
+                this.renderGrid();
+                
+                // Mulai Timer
+                this.startTime = Date.now();
+                if(this.timerInterval) clearInterval(this.timerInterval);
+                this.timerInterval = setInterval(() => {
+                    let now = Date.now();
+                    let diff = (now - this.startTime) / 1000;
+                    this.timeEl.innerText = diff.toFixed(1);
+                }, 100); // Update tiap 100ms
+
+                this.updateTarget();
+            },
+
+            renderGrid: function() {
+                this.gridEl.innerHTML = '';
+                this.gridEl.style.gridTemplateColumns = `repeat(${this.gridSize}, 1fr)`;
+
+                // Buat Array Angka 1-25
+                let numbers = [];
+                for(let i=1; i<=this.totalCells; i++) numbers.push(i);
+                
+                // Acak Posisi (Fisher-Yates Shuffle)
+                for (let i = numbers.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+                }
+
+                // Render ke HTML
+                numbers.forEach(num => {
+                    let cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.innerText = num;
+                    
+                    // Event Touchstart lebih responsif dari click
+                    cell.ontouchstart = (e) => { e.preventDefault(); this.check(num, cell); };
+                    cell.onclick = () => this.check(num, cell);
+
+                    this.gridEl.appendChild(cell);
+                });
+            },
+
+            check: function(num, cellEl) {
+                if(num === this.currentNum) {
+                    // BENAR
+                    // Efek visual
+                    cellEl.classList.add('correct');
+                    
+                    // Cek Selesai
+                    if(this.currentNum === this.totalCells) {
+                        this.finish();
+                    } else {
+                        this.currentNum++;
+                        this.updateTarget();
+                    }
+                } else {
+                    // SALAH
+                    cellEl.classList.add('wrong');
+                    navigator.vibrate && navigator.vibrate(200); // Getar
+                    setTimeout(() => cellEl.classList.remove('wrong'), 300);
+                }
+            },
+
+            updateTarget: function() {
+                this.targetEl.innerText = this.currentNum;
+            },
+
+            finish: function() {
+                clearInterval(this.timerInterval);
+                let finalTime = this.timeEl.innerText;
+                
+                document.getElementById('final-time').innerText = finalTime + "s";
+                
+                // Evaluasi
+                let t = parseFloat(finalTime);
+                let msg = "Butuh Latihan.";
+                if(t < 40) msg = "Cukup Baik.";
+                if(t < 30) msg = "Sangat Cepat!";
+                if(t < 20) msg = "Mata Pilot Tempur!";
+                
+                document.getElementById('final-msg').innerText = msg;
+                this.screen('s-result');
+            },
+
+            screen: function(id) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                const el = document.getElementById(id);
+                if(el) el.classList.add('active');
+            }
+        };
+    </script>
+</body>
+</html>

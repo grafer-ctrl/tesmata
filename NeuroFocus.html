@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neuro Focus - Reflex Test</title>
+    <style>
+        /* --- NEON DARK THEME --- */
+        :root {
+            --bg: #050505;
+            --text: #ffffff;
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff00ff;
+            --neon-green: #00ff00;
+            --ad-h: 70px;
+        }
+
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Courier New', Courier, monospace; /* Font ala Hacker/Sci-Fi */
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HUD ATAS */
+        #hud {
+            display: flex; justify-content: space-between;
+            padding: 15px 20px;
+            border-bottom: 1px solid #333;
+            background: #111;
+            z-index: 20;
+        }
+        .stat-box { text-align: center; }
+        .stat-label { font-size: 0.8rem; color: #888; }
+        .stat-val { font-size: 1.2rem; font-weight: bold; color: var(--neon-blue); text-shadow: 0 0 5px var(--neon-blue); }
+
+        /* AREA GAMEPLAY */
+        #game-field {
+            flex: 1;
+            position: relative;
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        /* TARGET (DOT) */
+        .target {
+            position: absolute;
+            border-radius: 50%;
+            background: transparent;
+            border: 3px solid var(--neon-pink);
+            box-shadow: 0 0 15px var(--neon-pink), inset 0 0 10px var(--neon-pink);
+            transform: translate(-50%, -50%); /* Center anchor */
+            cursor: pointer;
+            transition: transform 0.1s; /* Efek klik */
+        }
+        .target:active { background: var(--neon-pink); }
+        
+        /* Animasi Shrink (Mengecil = Waktu Habis) */
+        @keyframes shrink { from { transform: translate(-50%, -50%) scale(1); } to { transform: translate(-50%, -50%) scale(0); } }
+        
+        /* SCREENS */
+        .screen {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            text-align: center;
+        }
+        .screen.active { display: flex; }
+
+        h1 { font-size: 2.5rem; color: var(--neon-green); text-shadow: 0 0 10px var(--neon-green); margin-bottom: 10px; }
+        p { color: #ccc; margin-bottom: 30px; max-width: 300px; line-height: 1.5; }
+
+        .btn {
+            background: transparent;
+            color: var(--neon-blue);
+            border: 2px solid var(--neon-blue);
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--neon-blue);
+            transition: 0.2s;
+        }
+        .btn:hover, .btn:active { background: var(--neon-blue); color: #000; }
+
+        /* IKLAN */
+        #ad-dock {
+            height: var(--ad-h);
+            min-height: var(--ad-h);
+            background: #000;
+            border-top: 1px solid #333;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 100;
+        }
+        .ad-scale { transform: scale(0.75); } /* Scale down for mobile */
+
+        /* VFX: Partikel Ledakan */
+        .particle {
+            position: absolute;
+            width: 4px; height: 4px;
+            background: var(--neon-green);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: fadeOut 0.5s forwards;
+        }
+        @keyframes fadeOut { to { opacity: 0; transform: translate(var(--tx), var(--ty)); } }
+
+    </style>
+</head>
+<body>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div class="stat-box">
+            <div class="stat-label">SCORE</div>
+            <div class="stat-val" id="ui-score">0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">COMBO</div>
+            <div class="stat-val" style="color:var(--neon-pink)" id="ui-combo">x0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">LIVES</div>
+            <div class="stat-val" style="color:var(--neon-green)" id="ui-lives">3</div>
+        </div>
+    </div>
+
+    <!-- GAMEPLAY -->
+    <div id="game-field">
+        <!-- Targets spawn here -->
+    </div>
+
+    <!-- LAYAR MENU -->
+    <div id="s-menu" class="screen active">
+        <h1>NEURO FOCUS</h1>
+        <p>Uji kecepatan refleks mata & tangan.<br>Tekan lingkaran neon sebelum menghilang!</p>
+        <button class="btn" onclick="game.start()">START SYSTEM</button>
+    </div>
+
+    <!-- LAYAR GAME OVER -->
+    <div id="s-over" class="screen">
+        <h1 style="color:red; text-shadow:0 0 10px red;">SYSTEM FAIL</h1>
+        <p>Refleks Anda:</p>
+        <h2 style="font-size:3rem; margin:0; color:white;" id="final-score">0</h2>
+        <p id="final-msg">Too Slow.</p>
+        <button class="btn" onclick="game.start()">REBOOT</button>
+    </div>
+
+    <!-- IKLAN -->
+    <div id="ad-dock">
+        <div class="ad-scale">
+            <script type="text/javascript">
+                atOptions = {
+                    'key' : '2a28cd5411ae53a35cf4ec828d845d19',
+                    'format' : 'iframe',
+                    'height' : 60,
+                    'width' : 468,
+                    'params' : {}
+                };
+            </script>
+            <script type="text/javascript" src="https://www.highperformanceformat.com/2a28cd5411ae53a35cf4ec828d845d19/invoke.js"></script>
+        </div>
+    </div>
+
+    <script>
+        const game = {
+            score: 0,
+            lives: 3,
+            combo: 0,
+            activeTarget: null,
+            spawnTimer: null,
+            gameSpeed: 2000, // Durasi lingkaran awal (ms)
+            field: document.getElementById('game-field'),
+
+            start: function() {
+                this.score = 0;
+                this.lives = 3;
+                this.combo = 0;
+                this.gameSpeed = 2000;
+                this.activeTarget = null;
+                
+                this.updateUI();
+                this.screens('s-none'); // Hide menus
+                this.spawn();
+            },
+
+            spawn: function() {
+                if(this.lives <= 0) return;
+
+                // 1. Bersihkan target lama jika ada
+                this.field.innerHTML = '';
+
+                // 2. Tentukan Posisi Random
+                // Padding 50px agar tidak terlalu pinggir
+                const maxX = this.field.clientWidth - 80;
+                const maxY = this.field.clientHeight - 80;
+                const x = Math.random() * maxX + 40;
+                const y = Math.random() * maxY + 40;
+
+                // 3. Buat Elemen Target
+                const dot = document.createElement('div');
+                dot.className = 'target';
+                
+                // Ukuran bervariasi (makin tinggi skor, makin kecil)
+                let size = Math.max(40, 100 - (this.score * 0.5));
+                dot.style.width = size + 'px';
+                dot.style.height = size + 'px';
+                dot.style.left = x + 'px';
+                dot.style.top = y + 'px';
+
+                // Set Animasi Durasi (Makin tinggi skor, makin cepat hilang)
+                let duration = Math.max(600, 2000 - (this.score * 20)); // Min 0.6 detik
+                dot.style.animation = `shrink ${duration}ms linear forwards`;
+
+                // Event Klik
+                // Gunakan 'touchstart' agar instant di HP
+                dot.ontouchstart = (e) => { 
+                    e.preventDefault(); 
+                    this.hit(x, y, size); 
+                };
+                dot.onclick = () => this.hit(x, y, size); // Fallback mouse
+
+                // Timeout Logic (Jika gagal klik)
+                this.spawnTimer = setTimeout(() => {
+                    this.miss();
+                }, duration);
+
+                this.field.appendChild(dot);
+                this.activeTarget = dot;
+            },
+
+            hit: function(x, y, size) {
+                if(!this.activeTarget) return;
+                clearTimeout(this.spawnTimer);
+                this.activeTarget = null;
+
+                // Tambah Skor
+                this.combo++;
+                let points = 10 + this.combo; // Combo multiplier
+                this.score += points;
+                
+                // Efek Partikel
+                this.createExplosion(x, y);
+
+                this.updateUI();
+                // Instant spawn next target
+                this.spawn(); 
+            },
+
+            miss: function() {
+                this.activeTarget = null;
+                this.lives--;
+                this.combo = 0; // Reset combo
+                this.field.innerHTML = ''; // Hapus dot
+                
+                // Layar berkedip merah
+                this.field.style.background = "red";
+                setTimeout(() => {
+                    this.field.style.background = "radial-gradient(circle at center, #1a1a1a 0%, #000000 100%)";
+                }, 100);
+                
+                navigator.vibrate && navigator.vibrate(300); // Getar panjang
+
+                this.updateUI();
+
+                if(this.lives <= 0) {
+                    this.gameOver();
+                } else {
+                    // Jeda sebentar sebelum spawn lagi
+                    setTimeout(() => this.spawn(), 500);
+                }
+            },
+
+            createExplosion: function(x, y) {
+                for(let i=0; i<8; i++) {
+                    let p = document.createElement('div');
+                    p.className = 'particle';
+                    p.style.left = x + 'px';
+                    p.style.top = y + 'px';
+                    
+                    // Random direction
+                    let tx = (Math.random() - 0.5) * 100 + 'px';
+                    let ty = (Math.random() - 0.5) * 100 + 'px';
+                    p.style.setProperty('--tx', tx);
+                    p.style.setProperty('--ty', ty);
+                    
+                    this.field.appendChild(p);
+                    setTimeout(() => p.remove(), 500);
+                }
+            },
+
+            gameOver: function() {
+                document.getElementById('final-score').innerText = this.score;
+                
+                let msg = "Refleks Lambat.";
+                if(this.score > 500) msg = "Lumayan.";
+                if(this.score > 1000) msg = "Sangat Cepat!";
+                if(this.score > 2000) msg = "REFLEKS CYBORG!";
+                
+                document.getElementById('final-msg').innerText = msg;
+                this.screens('s-over');
+            },
+
+            updateUI: function() {
+                document.getElementById('ui-score').innerText = this.score;
+                document.getElementById('ui-combo').innerText = "x" + this.combo;
+                document.getElementById('ui-lives').innerText = this.lives;
+            },
+
+            screens: function(id) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                const el = document.getElementById(id);
+                if(el) el.classList.add('active');
+            }
+        };
+    </script>
+</body>
+</html>

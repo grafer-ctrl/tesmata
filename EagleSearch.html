@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Eagle Search - Scanning Test</title>
+    <style>
+        :root {
+            --bg: #2f3640;
+            --panel: #353b48;
+            --text: #f5f6fa;
+            --accent: #fbc531;
+            --ad-h: 75px;
+        }
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            margin: 0; padding: 0; background: var(--bg); color: var(--text);
+            font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        /* TOP BAR */
+        #top-bar {
+            padding: 15px; background: var(--panel); display: flex; justify-content: space-between;
+            font-weight: bold; font-size: 1.1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* GRID AREA */
+        #game-wrap {
+            flex: 1; display: flex; justify-content: center; align-items: center; padding: 10px;
+        }
+        #grid {
+            display: grid; gap: 5px; background: var(--panel); padding: 10px; border-radius: 10px;
+            width: 100%; max-width: 400px; aspect-ratio: 1;
+        }
+        .cell {
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.5rem; cursor: pointer; background: var(--bg); border-radius: 5px;
+        }
+        .cell:active { background: var(--accent); }
+
+        /* SCREENS */
+        .screen {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: var(--bg); display: none; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 20; text-align: center;
+        }
+        .screen.active { display: flex; }
+        
+        .btn-start {
+            background: var(--accent); color: #000; border: none; padding: 15px 50px;
+            font-size: 1.2rem; border-radius: 50px; font-weight: bold; margin-top: 20px;
+        }
+
+        /* AD FOOTER */
+        #ad-dock {
+            height: var(--ad-h); background: #000; border-top: 1px solid #555;
+            display: flex; justify-content: center; align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="top-bar">
+        <span>Level <span id="lvl">1</span></span>
+        <span>⏱️ <span id="time">60</span></span>
+    </div>
+
+    <div id="game-wrap">
+        <div id="grid"></div>
+    </div>
+
+    <!-- MENU -->
+    <div id="s-menu" class="screen active">
+        <div style="font-size:4rem;">🦅</div>
+        <h1>Eagle Search</h1>
+        <p>Find the odd emoji out!</p>
+        <div style="font-size:1.5rem; margin:10px;">😐 😐 😑 😐</div>
+        <button class="btn-start" onclick="game.start()">PLAY</button>
+    </div>
+
+    <!-- GAME OVER -->
+    <div id="s-over" class="screen">
+        <h2>GAME OVER</h2>
+        <p>Final Level:</p>
+        <h1 id="final-lvl" style="font-size:4rem; margin:10px 0; color:var(--accent)">1</h1>
+        <button class="btn-start" onclick="game.start()">AGAIN</button>
+    </div>
+
+    <div id="ad-dock">
+        <div style="transform: scale(0.75);">
+            <script type="text/javascript">
+                atOptions = { 'key' : '2a28cd5411ae53a35cf4ec828d845d19', 'format' : 'iframe', 'height' : 60, 'width' : 468, 'params' : {} };
+            </script>
+            <script type="text/javascript" src="https://www.highperformanceformat.com/2a28cd5411ae53a35cf4ec828d845d19/invoke.js"></script>
+        </div>
+    </div>
+
+    <script>
+        const game = {
+            level: 1, time: 60, timer: null,
+            pairs: [
+                ['😐','😑'], ['😺','😸'], ['💀','☠️'], ['🌑','🌚'], 
+                ['🍀','☘️'], ['🔒','🔓'], ['📧','📨'], ['⭐','🌟'],
+                ['🍦','🍨'], ['🚗','🚕'], ['🕐','🕑'], ['👓','🕶️']
+            ],
+            
+            start: function() {
+                this.level = 1; this.time = 60;
+                this.updateUI();
+                document.querySelector('.screen.active').classList.remove('active');
+                this.render();
+                
+                if(this.timer) clearInterval(this.timer);
+                this.timer = setInterval(() => {
+                    this.time--;
+                    this.updateUI();
+                    if(this.time <= 0) this.over();
+                }, 1000);
+            },
+
+            render: function() {
+                const grid = document.getElementById('grid');
+                grid.innerHTML = '';
+
+                // Grid Size (Max 7x7 for mobile)
+                let cols = Math.min(7, 2 + Math.floor(this.level / 3));
+                grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+                
+                // Pick Emoji Pair
+                const pair = this.pairs[Math.floor(Math.random() * this.pairs.length)];
+                const target = pair[1];
+                const distraction = pair[0];
+
+                const total = cols * cols;
+                const targetIdx = Math.floor(Math.random() * total);
+
+                for(let i=0; i<total; i++) {
+                    let el = document.createElement('div');
+                    el.className = 'cell';
+                    // Resize emoji based on grid density
+                    el.style.fontSize = (280 / cols) + 'px'; 
+                    el.innerText = (i === targetIdx) ? target : distraction;
+                    
+                    el.onclick = () => {
+                        if(i === targetIdx) {
+                            this.level++;
+                            this.time += 2; // Bonus time
+                            this.render();
+                        } else {
+                            this.time -= 5; // Penalty
+                            grid.style.background = '#c23616'; // Flash Red
+                            setTimeout(()=>grid.style.background='#353b48', 200);
+                        }
+                        this.updateUI();
+                    };
+                    grid.appendChild(el);
+                }
+            },
+
+            updateUI: function() {
+                document.getElementById('lvl').innerText = this.level;
+                document.getElementById('time').innerText = this.time;
+            },
+
+            over: function() {
+                clearInterval(this.timer);
+                document.getElementById('final-lvl').innerText = this.level;
+                document.getElementById('s-over').classList.add('active');
+            }
+        };
+    </script>
+</body>
+</html>

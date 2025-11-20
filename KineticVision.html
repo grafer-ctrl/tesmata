@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kinetic Vision - Dynamic Acuity</title>
+    <style>
+        /* --- CYBER HUD THEME --- */
+        :root {
+            --bg: #0b0c10;
+            --panel: #1f2833;
+            --neon: #66fcf1;
+            --text: #c5c6c7;
+            --danger: #ff003c;
+            --ad-h: 75px;
+        }
+
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Orbitron', 'Segoe UI', sans-serif; /* Tech font feel */
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* STATS BAR */
+        #stats-bar {
+            padding: 15px 20px;
+            background: var(--panel);
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid var(--neon);
+            box-shadow: 0 0 15px rgba(102, 252, 241, 0.2);
+            z-index: 20;
+            font-weight: bold;
+        }
+
+        /* GAME AREA (BOUNDARIES) */
+        #game-arena {
+            flex: 1;
+            position: relative;
+            background: radial-gradient(circle at center, #1a1a2e 0%, #000000 100%);
+            overflow: hidden;
+        }
+
+        /* MOVING TARGET */
+        #target-orb {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: rgba(31, 40, 51, 0.9);
+            border: 2px solid var(--neon);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 20px var(--neon), inset 0 0 10px var(--neon);
+            z-index: 10;
+            /* Smooth transition only for size, not position (JS handles pos) */
+            transition: width 0.3s, height 0.3s; 
+        }
+
+        #arrow-icon {
+            font-size: 40px;
+            color: #fff;
+            font-weight: 900;
+        }
+
+        /* CONTROLLER (D-PAD) */
+        #control-pad {
+            height: 180px;
+            background: var(--panel);
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 8px;
+            padding: 10px;
+            border-top: 1px solid #333;
+            z-index: 20;
+        }
+
+        .pad-btn {
+            background: #2c3e50;
+            border: none;
+            border-radius: 10px;
+            font-size: 2rem;
+            color: var(--neon);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.1s;
+            box-shadow: 0 4px 0 #1a252f;
+        }
+        .pad-btn:active { transform: translateY(4px); box-shadow: none; background: var(--neon); color: #000; }
+        
+        /* Grid positioning for D-Pad layout */
+        .btn-up { grid-column: 2; grid-row: 1; }
+        .btn-left { grid-column: 1; grid-row: 2; }
+        .btn-down { grid-column: 2; grid-row: 2; }
+        .btn-right { grid-column: 3; grid-row: 2; }
+
+        /* SCREENS */
+        .screen {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(11, 12, 16, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            text-align: center;
+            padding: 20px;
+        }
+        .screen.active { display: flex; }
+
+        h1 { color: var(--neon); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; }
+        p { max-width: 400px; line-height: 1.6; margin-bottom: 30px; color: #aaa; }
+
+        .action-btn {
+            background: transparent;
+            color: var(--neon);
+            border: 2px solid var(--neon);
+            padding: 15px 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 0 15px rgba(102, 252, 241, 0.4);
+        }
+
+        /* AD FOOTER */
+        #ad-dock {
+            height: var(--ad-h);
+            min-height: var(--ad-h);
+            background: #000;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 100;
+            border-top: 1px solid #333;
+        }
+        .ad-scaler { transform: scale(0.75); }
+
+        /* SHAKE ANIMATION */
+        .shake { animation: shake 0.4s ease-in-out; border-color: var(--danger) !important; box-shadow: 0 0 20px var(--danger) !important; }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+
+    </style>
+</head>
+<body>
+
+    <!-- STATS -->
+    <div id="stats-bar">
+        <div>SCORE: <span id="ui-score" style="color:white">0</span></div>
+        <div style="color:var(--danger)">LIVES: <span id="ui-lives">3</span></div>
+    </div>
+
+    <!-- GAME AREA -->
+    <div id="game-arena">
+        <div id="target-orb">
+            <div id="arrow-icon">⬆</div>
+        </div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div id="control-pad">
+        <button class="pad-btn btn-up" onclick="game.check('up')">▲</button>
+        <button class="pad-btn btn-left" onclick="game.check('left')">◀</button>
+        <button class="pad-btn btn-down" onclick="game.check('down')">▼</button>
+        <button class="pad-btn btn-right" onclick="game.check('right')">▶</button>
+    </div>
+
+    <!-- MENUS -->
+    <div id="s-menu" class="screen active">
+        <div style="font-size:4rem; margin-bottom:10px;">🛸</div>
+        <h1>Kinetic Vision</h1>
+        <p>Training for <b>Dynamic Visual Acuity</b>.<br>Track the moving orb and press the matching arrow button.</p>
+        <button class="action-btn" onclick="game.start()">INITIATE</button>
+    </div>
+
+    <div id="s-over" class="screen">
+        <h2 style="color:var(--danger)">SYSTEM FAILURE</h2>
+        <p>Your tracking score:</p>
+        <h1 id="final-score" style="font-size:3rem; color:white; margin:0;">0</h1>
+        <p id="final-msg">Keep practicing.</p>
+        <button class="action-btn" onclick="game.start()">RETRY</button>
+    </div>
+
+    <!-- ADS -->
+    <div id="ad-dock">
+        <div class="ad-scaler">
+            <script type="text/javascript">
+                atOptions = {
+                    'key' : '2a28cd5411ae53a35cf4ec828d845d19',
+                    'format' : 'iframe',
+                    'height' : 60,
+                    'width' : 468,
+                    'params' : {}
+                };
+            </script>
+            <script type="text/javascript" src="https://www.highperformanceformat.com/2a28cd5411ae53a35cf4ec828d845d19/invoke.js"></script>
+        </div>
+    </div>
+
+    <script>
+        const game = {
+            score: 0,
+            lives: 3,
+            isRunning: false,
+            
+            // Physics
+            posX: 100, posY: 100,
+            velX: 2, velY: 2,
+            speed: 2, // Base speed multiplier
+            
+            // Game Elements
+            currentDir: 'up', // up, down, left, right
+            arrows: { 'up': '▲', 'down': '▼', 'left': '◀', 'right': '▶' },
+            orbSize: 80,
+            
+            // DOM
+            orb: document.getElementById('target-orb'),
+            arrowEl: document.getElementById('arrow-icon'),
+            arena: document.getElementById('game-arena'),
+            loopId: null,
+
+            start: function() {
+                this.score = 0;
+                this.lives = 3;
+                this.speed = 2.5; // Starting speed
+                this.orbSize = 80;
+                this.isRunning = true;
+                
+                this.updateUI();
+                this.screen('s-none');
+                
+                // Initial Spawn
+                this.randomizeArrow();
+                this.posX = this.arena.clientWidth / 2;
+                this.posY = this.arena.clientHeight / 2;
+                this.orb.style.width = this.orbSize + 'px';
+                this.orb.style.height = this.orbSize + 'px';
+                
+                // Start Loop
+                if(this.loopId) cancelAnimationFrame(this.loopId);
+                this.loop();
+            },
+
+            loop: function() {
+                if(!this.isRunning) return;
+
+                // 1. Update Physics
+                this.posX += this.velX * this.speed;
+                this.posY += this.velY * this.speed;
+
+                // 2. Collision Detection (Bounce)
+                const maxX = this.arena.clientWidth - this.orbSize;
+                const maxY = this.arena.clientHeight - this.orbSize;
+
+                if (this.posX <= 0 || this.posX >= maxX) {
+                    this.velX = -this.velX;
+                    this.posX = Math.max(0, Math.min(this.posX, maxX)); // Clamp
+                }
+                if (this.posY <= 0 || this.posY >= maxY) {
+                    this.velY = -this.velY;
+                    this.posY = Math.max(0, Math.min(this.posY, maxY)); // Clamp
+                }
+
+                // 3. Render
+                this.orb.style.transform = `translate(${this.posX}px, ${this.posY}px)`;
+
+                this.loopId = requestAnimationFrame(() => this.loop());
+            },
+
+            randomizeArrow: function() {
+                const keys = Object.keys(this.arrows);
+                this.currentDir = keys[Math.floor(Math.random() * keys.length)];
+                this.arrowEl.innerText = this.arrows[this.currentDir];
+                
+                // Randomize trajectory slightly
+                this.velX = (Math.random() > 0.5 ? 1 : -1) * (1 + Math.random());
+                this.velY = (Math.random() > 0.5 ? 1 : -1) * (1 + Math.random());
+            },
+
+            check: function(dir) {
+                if(!this.isRunning) return;
+
+                if (dir === this.currentDir) {
+                    // CORRECT
+                    this.score += 10;
+                    
+                    // Increase Difficulty
+                    this.speed += 0.2; // Move faster
+                    if (this.orbSize > 40) this.orbSize -= 2; // Get smaller
+                    
+                    this.orb.style.width = this.orbSize + 'px';
+                    this.orb.style.height = this.orbSize + 'px';
+                    this.arrowEl.style.fontSize = (this.orbSize / 2) + 'px';
+
+                    // Flash effect
+                    this.orb.style.borderColor = "#00ff00";
+                    setTimeout(() => this.orb.style.borderColor = "var(--neon)", 200);
+
+                    this.randomizeArrow();
+                    this.updateUI();
+
+                } else {
+                    // WRONG
+                    this.lives--;
+                    this.updateUI();
+                    
+                    // Shake effect
+                    this.orb.classList.add('shake');
+                    setTimeout(() => this.orb.classList.remove('shake'), 400);
+                    navigator.vibrate && navigator.vibrate(300);
+
+                    if(this.lives <= 0) this.gameOver();
+                }
+            },
+
+            updateUI: function() {
+                document.getElementById('ui-score').innerText = this.score;
+                document.getElementById('ui-lives').innerText = this.lives;
+            },
+
+            gameOver: function() {
+                this.isRunning = false;
+                cancelAnimationFrame(this.loopId);
+                
+                document.getElementById('final-score').innerText = this.score;
+                
+                let msg = "Target Lost.";
+                if(this.score > 100) msg = "Good Tracking.";
+                if(this.score > 300) msg = "Excellent Dynamic Vision!";
+                if(this.score > 500) msg = "Eagle Eye Status!";
+                
+                document.getElementById('final-msg').innerText = msg;
+                this.screen('s-over');
+            },
+
+            screen: function(id) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                const el = document.getElementById(id);
+                if(el) el.classList.add('active');
+            }
+        };
+    </script>
+</body>
+</html>

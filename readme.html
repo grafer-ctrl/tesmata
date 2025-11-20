@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vision Lab - Information</title>
+    <style>
+        /* --- VARIABLES (SAME AS HOME) --- */
+        :root {
+            --bg: #f8f9fa;
+            --text-main: #2d3436;
+            --text-sub: #636e72;
+            --primary: #0984e3;
+            --card-bg: #ffffff;
+            --nav-bg: rgba(255, 255, 255, 0.9);
+            --shadow: 0 4px 20px rgba(0,0,0,0.05);
+            --ad-h: 70px;
+        }
+
+        /* DARK MODE */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #121212;
+                --text-main: #dfe6e9;
+                --text-sub: #b2bec3;
+                --primary: #74b9ff;
+                --card-bg: #1e1e1e;
+                --nav-bg: rgba(30, 30, 30, 0.9);
+            }
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; text-decoration: none; }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            padding-bottom: 100px; /* Space for Navbar */
+        }
+
+        /* --- HEADER (CENTERED) --- */
+        header {
+            padding: 30px 20px;
+            background: var(--card-bg);
+            border-bottom-left-radius: 30px;
+            border-bottom-right-radius: 30px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .brand {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+            display: flex; justify-content: center; align-items: center; gap: 10px;
+            width: 100%;
+        }
+
+        .subtitle {
+            margin-top: 8px;
+            font-size: 0.95rem;
+            color: var(--text-sub);
+            line-height: 1.5;
+            max-width: 80%;
+        }
+
+        /* --- CONTENT LAYOUT --- */
+        .container {
+            padding: 0 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* CONTENT CARD STYLE */
+        .info-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 15px;
+            display: flex; align-items: center; gap: 10px;
+            border-bottom: 2px solid rgba(9, 132, 227, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .content-text {
+            font-size: 0.95rem;
+            color: var(--text-sub);
+            line-height: 1.6;
+        }
+
+        .content-text p { margin-bottom: 15px; }
+        .content-text ul { padding-left: 20px; margin-bottom: 15px; }
+        .content-text li { margin-bottom: 5px; }
+
+        /* EMAIL BUTTON */
+        .contact-btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 10px 25px;
+            border-radius: 50px;
+            font-weight: bold;
+            margin-top: 10px;
+            box-shadow: 0 4px 10px rgba(9, 132, 227, 0.3);
+        }
+
+        /* --- FLOATING NAVBAR --- */
+        .navbar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 400px;
+            height: 65px;
+            background: var(--nav-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 35px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            z-index: 1000;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .nav-item {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            color: var(--text-sub);
+            font-size: 0.75rem; font-weight: 600;
+            width: 50%; height: 100%; border-radius: 35px;
+        }
+
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 1.4rem; margin-bottom: 2px; }
+
+        /* --- AD CONTAINER --- */
+        .ad-container {
+            margin-top: 10px;
+            width: 100%;
+            display: flex; justify-content: center;
+            overflow: hidden;
+            border-radius: 10px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="brand">
+            <span>ℹ️</span> Information
+        </div>
+        <div class="subtitle">
+            Legal information, privacy policy, and contact details.
+        </div>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="container">
+
+        <!-- 1. ABOUT APP -->
+        <div class="info-card">
+            <div class="section-title">🚀 About Vision Lab</div>
+            <div class="content-text">
+                <p>Vision Lab is a comprehensive eye training application designed to test and improve your visual skills through gamified challenges.</p>
+                <p>Our suite includes tests for color sensitivity, visual acuity, reflexes, and peripheral vision.</p>
+            </div>
+        </div>
+
+        <!-- 2. MEDICAL DISCLAIMER (IMPORTANT) -->
+        <div class="info-card" style="border-left: 4px solid #ff9f43;">
+            <div class="section-title" style="color: #ff9f43;">⚠️ Medical Disclaimer</div>
+            <div class="content-text">
+                <p><b>This application is for entertainment and educational purposes only.</b></p>
+                <p>The tests provided in this app are not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or qualified health provider with any questions you may have regarding a medical condition.</p>
+            </div>
+        </div>
+
+        <!-- 3. PRIVACY POLICY -->
+        <div class="info-card">
+            <div class="section-title">🔒 Privacy Policy</div>
+            <div class="content-text">
+                <p>Your privacy is important to us. Here is how we handle your data:</p>
+                <ul>
+                    <li><b>No Personal Data:</b> We do not collect or store any personal information such as your name, location, or health data.</li>
+                    <li><b>Local Storage:</b> Game scores may be stored locally on your device to track progress.</li>
+                    <li><b>Advertising:</b> We use third-party advertising partners (Adsterra) to serve ads. These partners may use cookies to serve ads based on your prior visits to this or other websites.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 4. TERMS & CONDITIONS -->
+        <div class="info-card">
+            <div class="section-title">📄 Terms & Conditions</div>
+            <div class="content-text">
+                <p>By using this application, you agree to the following terms:</p>
+                <ul>
+                    <li>The app is provided "as is" without any warranties.</li>
+                    <li>You agree not to use this app while driving or operating heavy machinery.</li>
+                    <li>We reserve the right to update or modify the app at any time.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 5. CONTACT -->
+        <div class="info-card">
+            <div class="section-title">📧 Contact Us</div>
+            <div class="content-text">
+                <p>Have feedback, found a bug, or just want to say hello? Feel free to reach out to our support team.</p>
+                <a href="mailto:support@visionlab.app" class="contact-btn">Send Email</a>
+            </div>
+        </div>
+
+        <!-- ADSTERRA AREA -->
+        <div class="ad-container">
+            <div style="transform: scale(0.85); transform-origin: top center;">
+                <!-- Paste your Adsterra Code Here -->
+                <script type="text/javascript">
+                    atOptions = {
+                        'key' : '2a28cd5411ae53a35cf4ec828d845d19',
+                        'format' : 'iframe',
+                        'height' : 60,
+                        'width' : 468,
+                        'params' : {}
+                    };
+                </script>
+                <script type="text/javascript" src="https://www.highperformanceformat.com/2a28cd5411ae53a35cf4ec828d845d19/invoke.js"></script>
+            </div>
+        </div>
+        
+        <!-- Spacer -->
+        <div style="height: 40px;"></div>
+
+    </div>
+
+    <!-- FLOATING NAVBAR -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-item">
+            <div class="nav-icon">🏠</div>
+            <span>Home</span>
+        </a>
+        <a href="read.html" class="nav-item active">
+            <div class="nav-icon">ℹ️</div>
+            <span>Read Me</span>
+        </a>
+    </nav>
+
+</body>
+</html>

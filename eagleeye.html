@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Eagle Eye Challenge</title>
+    <style>
+        /* --- CSS RESET & LAYOUT --- */
+        :root {
+            --bg-dark: #1a1a2e;
+            --bg-panel: #16213e;
+            --accent: #e94560;
+            --primary: #4cc9f0;
+            --text: #ffffff;
+            --ad-h: 75px;
+        }
+
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-dark);
+            color: var(--text);
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* GAME AREA (Top) */
+        #game-area {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* AD AREA (Bottom Fixed) */
+        #ad-area {
+            height: var(--ad-h);
+            min-height: var(--ad-h);
+            width: 100%;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-top: 2px solid #333;
+            z-index: 999;
+        }
+
+        /* SCREENS */
+        .screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 20px; text-align: center;
+            background-color: var(--bg-dark);
+        }
+        .screen.active { display: flex; z-index: 10; }
+
+        /* UI COMPONENTS */
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; color: var(--primary); }
+        p { color: #aaa; margin-bottom: 1.5rem; line-height: 1.5; max-width: 400px; }
+        
+        .btn {
+            background: linear-gradient(45deg, #4361ee, #f72585);
+            color: #fff; border: none; padding: 15px 45px;
+            font-size: 1.2rem; border-radius: 50px;
+            font-weight: bold; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.4);
+            text-transform: uppercase;
+        }
+        .btn:active { transform: scale(0.95); }
+
+        /* HUD */
+        .hud {
+            width: 100%; max-width: 450px;
+            display: flex; justify-content: space-between;
+            background: var(--bg-panel); padding: 15px;
+            border-radius: 12px; margin-bottom: 20px;
+            font-weight: bold; font-size: 1.1rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        /* GRID */
+        #grid-container {
+            display: grid; gap: 8px;
+            background: var(--bg-panel); padding: 10px;
+            border-radius: 15px;
+            width: 100%; max-width: 400px;
+            aspect-ratio: 1;
+        }
+
+        .tile { border-radius: 8px; cursor: pointer; transition: 0.1s; }
+        .tile:active { opacity: 0.7; transform: scale(0.95); }
+
+        /* Progress Bar */
+        .prog-track { width: 100%; height: 6px; background: #333; margin-bottom: 10px; max-width: 450px; border-radius: 3px;}
+        .prog-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; border-radius: 3px;}
+
+        /* AD SCALER */
+        .ad-scaler { transform: scale(0.75); }
+        @media(min-width: 400px) { .ad-scaler { transform: scale(0.85); } }
+        @media(min-width: 500px) { .ad-scaler { transform: scale(1); } }
+
+    </style>
+</head>
+<body>
+
+    <div id="game-area">
+        
+        <!-- SCREEN: HOME -->
+        <div id="s-home" class="screen active">
+            <div style="font-size: 4rem; margin-bottom:10px;">🦅</div>
+            <h1>Eagle Eye</h1>
+            <p><b>Color Shade Challenge</b><br>Find the tile with a slightly different color.<br>Level 1 to 100.</p>
+            <button class="btn" onclick="game.start()">Start Game</button>
+        </div>
+
+        <!-- SCREEN: PLAY -->
+        <div id="s-play" class="screen">
+            <div class="prog-track"><div id="ui-prog" class="prog-fill"></div></div>
+            
+            <div class="hud">
+                <div style="color:var(--primary)">Level <span id="ui-lvl">1</span></div>
+                <div style="color:var(--accent)">Time <span id="ui-time">60</span></div>
+            </div>
+
+            <div id="grid-container"></div>
+            <p style="font-size:0.9rem; margin-top:15px; opacity:0.7">Tap the odd color!</p>
+        </div>
+
+        <!-- SCREEN: GAME OVER -->
+        <div id="s-over" class="screen">
+            <h2 style="color:var(--accent)">TIME'S UP!</h2>
+            <p>You reached:</p>
+            <h1 id="ui-final-lvl" style="font-size:3.5rem; margin:10px 0; color:white">0</h1>
+            <p id="end-msg">Good effort.</p>
+            <button class="btn" onclick="game.start()">Try Again</button>
+        </div>
+
+        <!-- SCREEN: WIN -->
+        <div id="s-win" class="screen">
+            <h1 style="color:gold">LEGENDARY!</h1>
+            <p>You have perfect color sensitivity (Level 100).</p>
+            <button class="btn" onclick="game.start()">Play Again</button>
+        </div>
+
+    </div>
+
+    <!-- AD AREA -->
+    <div id="ad-area">
+        <div class="ad-scaler">
+            <script type="text/javascript">
+                atOptions = {
+                    'key' : '2a28cd5411ae53a35cf4ec828d845d19',
+                    'format' : 'iframe',
+                    'height' : 60,
+                    'width' : 468,
+                    'params' : {}
+                };
+            </script>
+            <script type="text/javascript" src="https://www.highperformanceformat.com/2a28cd5411ae53a35cf4ec828d845d19/invoke.js"></script>
+        </div>
+    </div>
+
+    <script>
+        const game = {
+            lvl: 1, maxLvl: 100, time: 60, timer: null,
+            elGrid: document.getElementById('grid-container'),
+            
+            start: function() {
+                this.lvl = 1;
+                this.time = 60;
+                this.switchScreen('s-play');
+                this.render();
+                this.updateUI();
+                
+                if(this.timer) clearInterval(this.timer);
+                this.timer = setInterval(() => {
+                    this.time--;
+                    this.updateUI();
+                    if(this.time <= 0) this.end('s-over');
+                }, 1000);
+            },
+
+            render: function() {
+                this.elGrid.innerHTML = '';
+                
+                // Grid Logic (2x2 to 6x6)
+                let size = 2;
+                if(this.lvl > 5) size = 3;
+                if(this.lvl > 15) size = 4;
+                if(this.lvl > 30) size = 5;
+                if(this.lvl > 50) size = 6;
+
+                this.elGrid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+
+                // Color Logic (HSL)
+                const h = Math.floor(Math.random() * 360);
+                const s = 70 + Math.random() * 10;
+                const l = 40 + Math.random() * 30;
+
+                // Difficulty: diff decreases as level increases
+                // Lvl 1 = 25% diff, Lvl 100 = 2% diff
+                let diff = Math.max(2, 25 - (this.lvl * 0.23)); 
+
+                const colBase = `hsl(${h}, ${s}%, ${l}%)`;
+                const colDiff = `hsl(${h}, ${s}%, ${l + diff}%)`;
+
+                const total = size * size;
+                const target = Math.floor(Math.random() * total);
+
+                for(let i=0; i<total; i++) {
+                    const box = document.createElement('div');
+                    box.className = 'tile';
+                    box.style.backgroundColor = (i === target) ? colDiff : colBase;
+                    
+                    // Touch/Click Event
+                    box.onclick = () => {
+                        if(i === target) {
+                            // Correct
+                            this.lvl++;
+                            this.time += 2; // Bonus time
+                            if(this.lvl > this.maxLvl) this.end('s-win');
+                            else this.render();
+                        } else {
+                            // Wrong
+                            this.time -= 5; // Penalty
+                            this.elGrid.style.transform = "translateX(5px)";
+                            setTimeout(()=> this.elGrid.style.transform = "translateX(0)", 100);
+                        }
+                        this.updateUI();
+                        if(this.time <= 0) this.end('s-over');
+                    };
+                    this.elGrid.appendChild(box);
+                }
+            },
+
+            updateUI: function() {
+                document.getElementById('ui-time').innerText = this.time;
+                document.getElementById('ui-lvl').innerText = this.lvl;
+                document.getElementById('ui-time').style.color = this.time < 10 ? '#ff4757' : '#e94560';
+                
+                const pct = (this.lvl / this.maxLvl) * 100;
+                document.getElementById('ui-prog').style.width = pct + "%";
+            },
+
+            end: function(screenId) {
+                clearInterval(this.timer);
+                document.getElementById('ui-final-lvl').innerText = this.lvl;
+                
+                // Feedback Message
+                let msg = "Needs more practice.";
+                if(this.lvl > 20) msg = "Average Eyesight.";
+                if(this.lvl > 40) msg = "Sharp Vision!";
+                if(this.lvl > 70) msg = "Sniper Eyes!";
+                document.getElementById('end-msg').innerText = msg;
+
+                this.switchScreen(screenId);
+            },
+
+            switchScreen: function(id) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById(id).classList.add('active');
+            }
+        };
+    </script>
+</body>
+</html>

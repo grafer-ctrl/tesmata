@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vision Lab - Eye Health</title>
+    <style>
+        /* --- MODERN VARIABLES --- */
+        :root {
+            --bg: #f8f9fa;
+            --text-main: #2d3436;
+            --text-sub: #636e72;
+            --primary: #0984e3; /* Medical Blue */
+            --card-bg: #ffffff;
+            --nav-bg: rgba(255, 255, 255, 0.9);
+            --shadow: 0 4px 20px rgba(0,0,0,0.05);
+            --ad-h: 70px;
+        }
+
+        /* DARK MODE SUPPORT */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #121212;
+                --text-main: #dfe6e9;
+                --text-sub: #b2bec3;
+                --primary: #74b9ff;
+                --card-bg: #1e1e1e;
+                --nav-bg: rgba(30, 30, 30, 0.9);
+            }
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; text-decoration: none; }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            /* Padding bottom for Navbar + Ad space */
+            padding-bottom: 100px; 
+        }
+
+        /* --- HEADER SECTION --- */
+        header {
+            padding: 30px 20px;
+            background: var(--card-bg);
+            border-bottom-left-radius: 30px;
+            border-bottom-right-radius: 30px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .brand {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        .subtitle {
+            margin-top: 8px;
+            font-size: 0.95rem;
+            color: var(--text-sub);
+            line-height: 1.5;
+        }
+
+        /* --- GRID LAYOUT --- */
+        .container {
+            padding: 0 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 2 Columns */
+            gap: 15px;
+        }
+
+        /* --- GAME CARD DESIGN --- */
+        .card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+
+        .card:active { transform: scale(0.97); }
+
+        .icon-box {
+            width: 50px; height: 50px;
+            border-radius: 15px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            background: rgba(9, 132, 227, 0.1); /* Light Blue Tint */
+        }
+
+        .card h3 {
+            font-size: 0.95rem;
+            margin: 0 0 5px 0;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .card p {
+            font-size: 0.75rem;
+            margin: 0;
+            color: var(--text-sub);
+        }
+
+        .tag {
+            position: absolute;
+            top: 10px; right: 10px;
+            width: 8px; height: 8px;
+            background: #00b894; /* Green Dot */
+            border-radius: 50%;
+        }
+
+        /* --- FLOATING NAVBAR --- */
+        .navbar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 400px;
+            height: 65px;
+            background: var(--nav-bg);
+            backdrop-filter: blur(10px); /* Glass Effect */
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 35px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            z-index: 1000;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-sub);
+            font-size: 0.75rem;
+            font-weight: 600;
+            width: 50%;
+            height: 100%;
+            border-radius: 35px;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        .nav-icon { font-size: 1.4rem; margin-bottom: 2px; }
+
+        /* --- AD CONTAINER --- */
+        .ad-container {
+            margin-top: 30px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            overflow: hidden;
+            border-radius: 10px;
+        }
+
+        /* Animation Entrance */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .card { animation: fadeInUp 0.5s ease forwards; opacity: 0; }
+        
+        /* Stagger animation delays for 10 items */
+        .card:nth-child(1) { animation-delay: 0.05s; }
+        .card:nth-child(2) { animation-delay: 0.1s; }
+        .card:nth-child(3) { animation-delay: 0.15s; }
+        .card:nth-child(4) { animation-delay: 0.2s; }
+        .card:nth-child(5) { animation-delay: 0.25s; }
+        .card:nth-child(6) { animation-delay: 0.3s; }
+        .card:nth-child(7) { animation-delay: 0.35s; }
+        .card:nth-child(8) { animation-delay: 0.4s; }
+        .card:nth-child(9) { animation-delay: 0.45s; }
+        .card:nth-child(10) { animation-delay: 0.5s; }
+
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="brand">
+            <span>👁️</span> Vision Lab
+        </div>
+        <div class="subtitle">
+            Your personal eye gym.<br>
+            <b>Keep your eyes healthy with these 10 tests.</b>
+        </div>
+    </header>
+
+    <!-- MAIN GRID -->
+    <div class="container">
+        <div class="grid">
+            
+            <!-- Game 1 -->
+            <a href="eagleeye.html" class="card">
+                <div class="tag"></div>
+                <div class="icon-box">🦅</div>
+                <h3>Eagle Eye</h3>
+                <p>Color Sensitivity</p>
+            </a>
+
+            <!-- Game 2 -->
+            <a href="Ishihara.html" class="card">
+                <div class="tag"></div>
+                <div class="icon-box">🎨</div>
+                <h3>Ishihara</h3>
+                <p>Color Blindness</p>
+            </a>
+
+            <!-- Game 3 -->
+            <a href="SnellenQuiz.html" class="card">
+                <div class="tag"></div>
+                <div class="icon-box">🅰️</div>
+                <h3>Snellen Quiz</h3>
+                <p>Visual Acuity</p>
+            </a>
+
+            <!-- Game 4 -->
+            <a href="TumblingE.html" class="card">
+                <div class="tag"></div>
+                <div class="icon-box">↔️</div>
+                <h3>Tumbling E</h3>
+                <p>Direction Test</p>
+            </a>
+
+            <!-- Game 5 -->
+            <a href="NeuroFocus.html" class="card">
+                <div class="tag"></div>
+                <div class="icon-box">⚡</div>
+                <h3>Neuro Focus</h3>
+                <p>Reflex Speed</p>
+            </a>
+
+            <!-- Game 6 -->
+            <a href="ShadowHunter.html" class="card">
+                <div class="tag"></div>
+                <div class="icon-box">👻</div>
+                <h3>Shadow Hunter</h3>
+                <p>Contrast Vision</p>
+            </a>
+
+            <!-- Game 7 -->
+            <a href="SchulteTable.html" class="card">
+                <div class="tag"></div>
+                <div class="icon-box">🔢</div>
+                <h3>Schulte Grid</h3>
+                <p>Peripheral Vision</p>
+            </a>
+
+            <!-- Game 8 -->
+            <a href="KineticVision.html" class="card">
+                <div class="tag"></div>
+                <div class="icon-box">🛸</div>
+                <h3>Kinetic Eye</h3>
+                <p>Dynamic Tracking</p>
+            </a>
+
+            <!-- Game 9 -->
+            <a href="ChromaMind.html" class="card">
+                <div class="tag"></div>
+                <div class="icon-box">🧠</div>
+                <h3>Chroma Mind</h3>
+                <p>Stroop Effect</p>
+            </a>
+
+            <!-- Game 10 -->
+            <a href="EagleSearch.html" class="card">
+                <div class="tag"></div>
+                <div class="icon-box">🔍</div>
+                <h3>Eagle Search</h3>
+                <p>Scanning Skill</p>
+            </a>
+
+        </div>
+
+        <!-- ADSTERRA AREA (Inside content flow) -->
+        <div class="ad-container">
+            <div style="transform: scale(0.85); transform-origin: top center;">
+                <!-- Paste your Adsterra Code Here -->
+                <script type="text/javascript">
+                    atOptions = {
+                        'key' : '2a28cd5411ae53a35cf4ec828d845d19',
+                        'format' : 'iframe',
+                        'height' : 60,
+                        'width' : 468,
+                        'params' : {}
+                    };
+                </script>
+                <script type="text/javascript" src="https://www.highperformanceformat.com/2a28cd5411ae53a35cf4ec828d845d19/invoke.js"></script>
+            </div>
+        </div>
+        
+        <!-- Spacer to prevent Navbar overlap -->
+        <div style="height: 40px;"></div>
+    </div>
+
+    <!-- FLOATING NAVBAR -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-item active">
+            <div class="nav-icon">🏠</div>
+            <span>Home</span>
+        </a>
+        <a href="read.html" class="nav-item">
+            <div class="nav-icon">ℹ️</div>
+            <span>Read Me</span>
+        </a>
+    </nav>
+
+</body>
+</html>

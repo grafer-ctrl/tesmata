@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Snellen Vision Quiz</title>
+    <style>
+        /* --- CSS MODERN --- */
+        :root {
+            --bg: #ffffff;
+            --text: #000000;
+            --primary: #4834d4;
+            --btn-bg: #f1f2f6;
+            --btn-text: #2d3436;
+            --correct: #6ab04c;
+            --wrong: #eb4d4b;
+            --ad-h: 70px;
+        }
+
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* HEADER */
+        header {
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f9f9f9;
+            border-bottom: 1px solid #eee;
+            font-weight: bold;
+        }
+
+        /* AREA GAME (LETTER) */
+        #game-area {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #target-letter {
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
+            line-height: 1;
+            transition: all 0.3s ease;
+        }
+
+        /* AREA TOMBOL JAWABAN (CONTROLS) */
+        #controls {
+            padding: 15px;
+            background: #fff;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
+            z-index: 10;
+        }
+
+        .grid-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .option-btn {
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            border: none;
+            padding: 20px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.1s;
+            box-shadow: 0 4px 0 #dfe4ea;
+        }
+        .option-btn:active { transform: translateY(4px); box-shadow: none; }
+        
+        /* Warna tombol saat ditekan */
+        .btn-correct { background: var(--correct) !important; color: white !important; box-shadow: 0 4px 0 #458a2d !important;}
+        .btn-wrong { background: var(--wrong) !important; color: white !important; box-shadow: 0 4px 0 #c0392b !important;}
+
+        /* SCREENS */
+        .screen {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: var(--bg);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            text-align: center;
+            padding: 20px;
+        }
+        .screen.active { display: flex; }
+
+        /* START BUTTON */
+        .main-btn {
+            background: var(--primary); color: white;
+            border: none; padding: 15px 50px;
+            font-size: 1.2rem; border-radius: 50px;
+            margin-top: 20px; font-weight: bold;
+            box-shadow: 0 5px 15px rgba(72, 52, 212, 0.4);
+        }
+
+        /* IKLAN */
+        #ad-box {
+            height: var(--ad-h);
+            min-height: var(--ad-h);
+            background: #000;
+            display: flex; justify-content: center; align-items: center;
+            border-top: 1px solid #333;
+            z-index: 999;
+        }
+        .scale-ad { transform: scale(0.75); }
+
+    </style>
+</head>
+<body>
+
+    <!-- HEADER (HUD) -->
+    <header>
+        <div style="color:var(--primary)">Level <span id="hud-lvl">1</span></div>
+        <div style="font-size:1.2rem">⏱️ <span id="hud-time">30</span></div>
+    </header>
+
+    <!-- AREA DISPLAY HURUF -->
+    <div id="game-area">
+        <div id="target-letter" style="font-size: 150px;">A</div>
+    </div>
+
+    <!-- AREA TOMBOL JAWABAN -->
+    <div id="controls">
+        <div class="grid-options" id="btn-container">
+            <!-- Tombol digenerate JS -->
+            <button class="option-btn">A</button>
+            <button class="option-btn">B</button>
+            <button class="option-btn">C</button>
+            <button class="option-btn">D</button>
+        </div>
+    </div>
+
+    <!-- LAYAR MENU / HASIL -->
+    <div id="s-home" class="screen active">
+        <div style="font-size:4rem;">🅰️</div>
+        <h1>Snellen Quiz</h1>
+        <p>Tes ketajaman mata dengan huruf acak.<br>Makin lama makin kecil!</p>
+        <button class="main-btn" onclick="game.start()">MULAI</button>
+    </div>
+
+    <div id="s-over" class="screen">
+        <h2 style="color:var(--wrong)">WAKTU HABIS</h2>
+        <p>Mata Anda mampu membaca sampai:</p>
+        <h1 style="font-size:3rem; margin:10px 0;">Level <span id="end-lvl">0</span></h1>
+        <p id="end-msg">Normal</p>
+        <button class="main-btn" onclick="game.start()">COBA LAGI</button>
+    </div>
+
+    <!-- IKLAN FOOTER -->
+    <div id="ad-box">
+        <div class="scale-ad">
+             <script type="text/javascript">
+                atOptions = {
+                    'key' : '2a28cd5411ae53a35cf4ec828d845d19',
+                    'format' : 'iframe',
+                    'height' : 60,
+                    'width' : 468,
+                    'params' : {}
+                };
+            </script>
+            <script type="text/javascript" src="https://www.highperformanceformat.com/2a28cd5411ae53a35cf4ec828d845d19/invoke.js"></script>
+        </div>
+    </div>
+
+    <script>
+        const game = {
+            level: 1,
+            time: 30,
+            timer: null,
+            currentLetter: '',
+            // Huruf standar optotipe Snellen (Huruf yang paling jelas bentuknya)
+            letters: ['C', 'D', 'E', 'F', 'L', 'N', 'O', 'P', 'T', 'Z', 'A', 'H', 'K', 'U', 'V', 'X', 'Y'],
+            
+            elTarget: document.getElementById('target-letter'),
+            elBtns: document.getElementById('btn-container'),
+            
+            start: function() {
+                this.level = 1;
+                this.time = 30; // Mulai 30 detik
+                this.updateHUD();
+                this.screen('s-none'); // Sembunyikan overlay screen
+                
+                this.nextRound();
+
+                // Timer Global
+                if(this.timer) clearInterval(this.timer);
+                this.timer = setInterval(() => {
+                    this.time--;
+                    this.updateHUD();
+                    if(this.time <= 0) this.gameOver();
+                }, 1000);
+            },
+
+            nextRound: function() {
+                // 1. Pilih Huruf Target
+                const correct = this.letters[Math.floor(Math.random() * this.letters.length)];
+                this.currentLetter = correct;
+                this.elTarget.innerText = correct;
+
+                // 2. Atur Ukuran (Makin level tinggi, makin kecil)
+                // Start 150px, minimum 8px
+                let size = Math.max(8, 160 - (this.level * 6));
+                this.elTarget.style.fontSize = size + "px";
+                
+                // Tambahkan efek blur sedikit di level tinggi (simulasi mata lelah/silinder)
+                if(this.level > 20) this.elTarget.style.filter = "blur(0.5px)";
+                else this.elTarget.style.filter = "none";
+
+                // 3. Siapkan Pilihan Jawaban (1 Benar, 3 Salah)
+                let options = [correct];
+                while(options.length < 4) {
+                    let wrong = this.letters[Math.floor(Math.random() * this.letters.length)];
+                    if(!options.includes(wrong)) options.push(wrong);
+                }
+                
+                // Acak posisi tombol
+                options.sort(() => Math.random() - 0.5);
+
+                // 4. Render Tombol
+                this.elBtns.innerHTML = '';
+                options.forEach(char => {
+                    let btn = document.createElement('button');
+                    btn.className = 'option-btn';
+                    btn.innerText = char;
+                    
+                    // Touch Event untuk respon cepat
+                    btn.onclick = () => this.checkAnswer(char, btn);
+                    
+                    this.elBtns.appendChild(btn);
+                });
+            },
+
+            checkAnswer: function(answer, btnElement) {
+                if(answer === this.currentLetter) {
+                    // BENAR
+                    this.level++;
+                    this.time += 2; // Bonus waktu
+                    
+                    // Visual Feedback Hijau
+                    btnElement.classList.add('btn-correct');
+                    
+                    // Jeda sebentar baru ganti soal
+                    setTimeout(() => {
+                        this.updateHUD();
+                        this.nextRound();
+                    }, 150);
+                } else {
+                    // SALAH
+                    this.time -= 5; // Pinalti waktu
+                    this.updateHUD();
+                    
+                    // Visual Feedback Merah
+                    btnElement.classList.add('btn-wrong');
+                    navigator.vibrate && navigator.vibrate(200);
+                    
+                    if(this.time <= 0) this.gameOver();
+                }
+            },
+
+            updateHUD: function() {
+                document.getElementById('hud-lvl').innerText = this.level;
+                document.getElementById('hud-time').innerText = this.time;
+                // Warna timer merah jika kritis
+                document.getElementById('hud-time').style.color = this.time < 5 ? 'red' : 'black';
+            },
+
+            gameOver: function() {
+                clearInterval(this.timer);
+                document.getElementById('end-lvl').innerText = this.level;
+                
+                let msg = "Periksa Mata Anda.";
+                if(this.level > 10) msg = "Penglihatan Cukup.";
+                if(this.level > 20) msg = "Penglihatan Bagus.";
+                if(this.level > 30) msg = "Mata Sangat Tajam!";
+                
+                document.getElementById('end-msg').innerText = msg;
+                this.screen('s-over');
+            },
+
+            screen: function(id) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                const el = document.getElementById(id);
+                if(el) el.classList.add('active');
+            }
+        };
+    </script>
+</body>
+</html>
