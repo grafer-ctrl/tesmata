@@ -1,10 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- VIEWPORT TERBAIK UNTUK ANDROID WEBVIEW 2025 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Eagle Search - Scanning Test</title>
+
     <style>
+        /* RESET TOTAL */
+        html, body {
+            margin: 0; padding: 0; height: 100%; width: 100%;
+            overflow: hidden; background: #2f3640;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            color: #f5f6fa;
+            display: flex;
+            flex-direction: column;
+        }
+
         :root {
             --bg: #2f3640;
             --panel: #353b48;
@@ -12,163 +28,240 @@
             --accent: #fbc531;
             --ad-h: 75px;
         }
-        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
-        
-        body {
-            margin: 0; padding: 0; background: var(--bg); color: var(--text);
-            font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+
+        /* Fix tinggi 100% di semua Android (termasuk notch & gesture bar) */
+        #app {
+            height: 100vh;
+            height: 100dvh;           /* Dynamic Viewport Height – sangat penting! */
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
-        /* TOP BAR */
+        /* TOP BAR – sekarang pasti kelihatan */
         #top-bar {
-            padding: 15px; background: var(--panel); display: flex; justify-content: space-between;
-            font-weight: bold; font-size: 1.1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            padding: 15px 20px;
+            background: var(--panel);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            z-index: 100;
+            flex-shrink: 0;
         }
 
-        /* GRID AREA */
+        /* GAME AREA */
         #game-wrap {
-            flex: 1; display: flex; justify-content: center; align-items: center; padding: 10px;
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            overflow: hidden;
         }
+
         #grid {
-            display: grid; gap: 5px; background: var(--panel); padding: 10px; border-radius: 10px;
-            width: 100%; max-width: 400px; aspect-ratio: 1;
+            display: grid;
+            gap: 6px;
+            background: var(--panel);
+            padding: 12px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 420px;
+            aspect-ratio: 1 / 1;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
         }
+
         .cell {
-            display: flex; justify-content: center; align-items: center;
-            font-size: 1.5rem; cursor: pointer; background: var(--bg); border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--bg);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: clamp(2rem, 8vw, 5rem); /* auto-scale emoji */
         }
-        .cell:active { background: var(--accent); }
+        .cell:active { background: var(--accent); transform: scale(0.95); }
 
         /* SCREENS */
         .screen {
-            position: absolute; top:0; left:0; width:100%; height:100%;
-            background: var(--bg); display: none; flex-direction: column;
-            align-items: center; justify-content: center; z-index: 20; text-align: center;
+            position: absolute;
+            inset: 0;
+            background: var(--bg);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            z-index: 200;
         }
         .screen.active { display: flex; }
-        
-        .btn-start {
-            background: var(--accent); color: #000; border: none; padding: 15px 50px;
-            font-size: 1.2rem; border-radius: 50px; font-weight: bold; margin-top: 20px;
-        }
 
-        /* AD FOOTER */
-        #ad-dock {
-            height: var(--ad-h); background: #000; border-top: 1px solid #555;
-            display: flex; justify-content: center; align-items: center;
+        .btn-start {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 16px 56px;
+            font-size: 1.3rem;
+            border-radius: 50px;
+            font-weight: bold;
+            margin-top: 25px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(251,197,49,0.4);
+            transition: transform 0.1s;
         }
+        .btn-start:active { transform: scale(0.94); }
+
+        /* IKLAN BAWAH */
+        #ad-dock {
+            height: var(--ad-h);
+            min-height: var(--ad-h);
+            background: #000;
+            border-top: 1px solid #444;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+            z-index: 999;
+        }
+        .ad-scale { transform: scale(0.8); transform-origin: center; }
     </style>
 </head>
 <body>
 
+<div id="app">
+    <!-- HEADER -->
     <div id="top-bar">
         <span>Level <span id="lvl">1</span></span>
-        <span>⏱️ <span id="time">60</span></span>
+        <span>Timer <span id="time">60</span>s</span>
     </div>
 
+    <!-- MAIN GAME -->
     <div id="game-wrap">
         <div id="grid"></div>
     </div>
 
-    <!-- MENU -->
+    <!-- MENU SCREEN -->
     <div id="s-menu" class="screen active">
-        <div style="font-size:4rem;">🦅</div>
-        <h1>Eagle Search</h1>
-        <p>Find the odd emoji out!</p>
-        <div style="font-size:1.5rem; margin:10px;">😐 😐 😑 😐</div>
+        <div style="font-size:5rem;margin-bottom:10px;">Eagle</div>
+        <h1 style="margin:10px 0;font-size:2.5rem;">Eagle Search</h1>
+        <p style="font-size:1.1rem;max-width:90%;">Temukan emoji yang berbeda secepat mungkin!</p>
+        <div style="font-size:3rem;margin:20px 0;">Neutral Face Neutral Face Expressionless Face Neutral Face</div>
         <button class="btn-start" onclick="game.start()">PLAY</button>
     </div>
 
-    <!-- GAME OVER -->
+    <!-- GAME OVER SCREEN -->
     <div id="s-over" class="screen">
-        <h2>GAME OVER</h2>
-        <p>Final Level:</p>
-        <h1 id="final-lvl" style="font-size:4rem; margin:10px 0; color:var(--accent)">1</h1>
-        <button class="btn-start" onclick="game.start()">AGAIN</button>
+        <h2 style="color:#e74c3c;font-size:2.5rem;">GAME OVER</h2>
+        <p>Level Tertinggi Kamu:</p>
+        <h1 id="final-lvl" style="font-size:5rem;margin:15px 0;color:var(--accent)">1</h1>
+        <button class="btn-start" onclick="game.start()">MAIN LAGI</button>
     </div>
+</div>
 
-    <div id="ad-dock">
-        <div style="transform: scale(0.75);">
-            <script type="text/javascript">
-                atOptions = { 'key' : '2a28cd5411ae53a35cf4ec828d845d19', 'format' : 'iframe', 'height' : 60, 'width' : 468, 'params' : {} };
-            </script>
-            <script type="text/javascript" src="https://www.highperformanceformat.com/2a28cd5411ae53a35cf4ec828d845d19/invoke.js"></script>
-        </div>
+<!-- IKLAN FOOTER (di luar #app supaya tetap di bawah saat fullscreen) -->
+<div id="ad-dock">
+    <div class="ad-scale">
+        <script type="text/javascript">
+            atOptions = {
+                'key' : '2a28cd5411ae53a35cf4ec828d845d19',
+                'format' : 'iframe',
+                'height' : 60,
+                'width' : 468,
+                'params' : {}
+            };
+        </script>
+        <script type="text/javascript" src="//www.highperformanceformat.com/2a28cd5411ae53a35cf4ec828d845d19/invoke.js"></script>
     </div>
+</div>
 
-    <script>
-        const game = {
-            level: 1, time: 60, timer: null,
-            pairs: [
-                ['😐','😑'], ['😺','😸'], ['💀','☠️'], ['🌑','🌚'], 
-                ['🍀','☘️'], ['🔒','🔓'], ['📧','📨'], ['⭐','🌟'],
-                ['🍦','🍨'], ['🚗','🚕'], ['🕐','🕑'], ['👓','🕶️']
-            ],
-            
-            start: function() {
-                this.level = 1; this.time = 60;
+<script>
+    // Fix tinggi viewport saat resize/orientation (penting untuk Android!)
+    function fixViewport() {
+        const vh = window.innerHeight;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+        document.getElementById('app').style.height = `${vh}px`;
+    }
+    window.addEventListener('resize', fixViewport);
+    window.addEventListener('orientationchange', () => setTimeout(fixViewport, 100));
+    fixViewport();
+
+    const game = {
+        level: 1,
+        time: 60,
+        timer: null,
+
+        pairs: [
+            ['Neutral Face','Expressionless Face'], ['Grinning Cat','Grinning Cat with Smiling Eyes'], ['Skull','Skull and Crossbones'], ['New Moon','New Moon Face'],
+            ['Shamrock','Four Leaf Clover'], ['Locked','Unlocked'], ['Envelope','Envelope with Arrow'], ['Star','Glowing Star'],
+            ['Soft Ice Cream','Ice Cream'], ['Car','Taxi'], ['Clock Face One Oclock','Clock Face One-Thirty'], ['Glasses','Sunglasses']
+        ],
+
+        start() {
+            this.level = 1; this.time = 60;
+            clearInterval(this.timer);
+            document.querySelector('.screen.active')?.classList.remove('active');
+            this.updateUI();
+            this.render();
+
+            this.timer = setInterval(() => {
+                this.time--;
                 this.updateUI();
-                document.querySelector('.screen.active').classList.remove('active');
-                this.render();
-                
-                if(this.timer) clearInterval(this.timer);
-                this.timer = setInterval(() => {
-                    this.time--;
+                if (this.time <= 0) this.over();
+            }, 1000);
+        },
+
+        render() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            const cols = Math.min(7, 3 + Math.floor((this.level-1) / 3));
+            grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+            const pair = this.pairs[Math.floor(Math.random() * this.pairs.length)];
+            const normal = pair[0];
+            const odd = pair[1];
+            const total = cols * cols;
+            const oddIndex = Math.floor(Math.random() * total);
+
+            for (let i = 0; i < total; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.textContent = i === oddIndex ? odd : normal;
+
+                cell.onclick = () => {
+                    if (i === oddIndex) {
+                        this.level++;
+                        this.time += 2;
+                        this.render();
+                    } else {
+                        this.time = Math.max(5, this.time - 5);
+                        grid.style.background = '#e74c3c';
+                        setTimeout(() => grid.style.background = 'var(--panel)', 200);
+                    }
                     this.updateUI();
-                    if(this.time <= 0) this.over();
-                }, 1000);
-            },
-
-            render: function() {
-                const grid = document.getElementById('grid');
-                grid.innerHTML = '';
-
-                // Grid Size (Max 7x7 for mobile)
-                let cols = Math.min(7, 2 + Math.floor(this.level / 3));
-                grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-                
-                // Pick Emoji Pair
-                const pair = this.pairs[Math.floor(Math.random() * this.pairs.length)];
-                const target = pair[1];
-                const distraction = pair[0];
-
-                const total = cols * cols;
-                const targetIdx = Math.floor(Math.random() * total);
-
-                for(let i=0; i<total; i++) {
-                    let el = document.createElement('div');
-                    el.className = 'cell';
-                    // Resize emoji based on grid density
-                    el.style.fontSize = (280 / cols) + 'px'; 
-                    el.innerText = (i === targetIdx) ? target : distraction;
-                    
-                    el.onclick = () => {
-                        if(i === targetIdx) {
-                            this.level++;
-                            this.time += 2; // Bonus time
-                            this.render();
-                        } else {
-                            this.time -= 5; // Penalty
-                            grid.style.background = '#c23616'; // Flash Red
-                            setTimeout(()=>grid.style.background='#353b48', 200);
-                        }
-                        this.updateUI();
-                    };
-                    grid.appendChild(el);
-                }
-            },
-
-            updateUI: function() {
-                document.getElementById('lvl').innerText = this.level;
-                document.getElementById('time').innerText = this.time;
-            },
-
-            over: function() {
-                clearInterval(this.timer);
-                document.getElementById('final-lvl').innerText = this.level;
-                document.getElementById('s-over').classList.add('active');
+                };
+                grid.appendChild(cell);
             }
-        };
-    </script>
+        },
+
+        updateUI() {
+            document.getElementById('lvl').textContent = this.levelLlevel;
+            document.getElementById('time').textContent = this.time;
+        },
+
+        over() {
+            clearInterval(this.timer);
+            document.getElementById('final-lvl').textContent = this.level;
+            document.getElementById('s-over').classList.add('active');
+        }
+    };
+</script>
 </body>
 </html>
