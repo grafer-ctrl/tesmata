@@ -2,9 +2,44 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- VIEWPORT PALING OPTIMAL UNTUK ANDROID WEBVIEW -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+
     <title>E-Swipe Vision Test</title>
+
     <style>
+        /* RESET & FULLSCREEN UNTUK WEBVIEW ANDROID */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background-color: #000; /* fallback kalau var(--bg) belum load */
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            -webkit-text-size-adjust: none; /* penting untuk iOS & Android */
+        }
+
+        /* Gunakan visual viewport agar tidak terpotong notch/gesture bar */
+        #app-container {
+            height: 100vh;
+            height: 100dvh;               /* Dynamic Viewport Height (Android 12+) */
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
         :root {
             --bg: #ffffff;
             --text: #333333;
@@ -13,23 +48,20 @@
             --wrong: #e74c3c;
             --ad-h: 70px;
         }
-        
+
         @media (prefers-color-scheme: dark) {
             :root { --bg: #121212; --text: #eeeeee; }
         }
 
-        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
-
-        body {
-            margin: 0; padding: 0;
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: 'Segoe UI', sans-serif;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
+
+        /* Sembunyikan scrollbar tapi tetap bisa scroll kalau diperlukan */
+        ::-webkit-scrollbar { display: none; }
+        body { -ms-overflow-style: none; scrollbar-width: none; }
 
         /* HEADER INFO */
         #top-bar {
@@ -38,10 +70,12 @@
             justify-content: space-between;
             font-weight: bold;
             font-size: 1.1rem;
-            border-bottom: 1px solid #ccc;
+            border-bottom: 1px solid rgba(150,150,150,0.3);
+            background: var(--bg);
+            z-index: 100;
         }
 
-        /* AREA GAME TENGAH */
+        /* GAME AREA */
         #game-area {
             flex: 1;
             display: flex;
@@ -49,34 +83,32 @@
             align-items: center;
             justify-content: center;
             position: relative;
-            /* Area swipe seluruh layar */
-            touch-action: none; 
+            touch-action: none; /* sangat penting untuk swipe akurat */
+            overflow: hidden;
         }
 
-        /* ELEMENT HURUF E */
         #tumbling-e {
             font-family: sans-serif;
             font-weight: 900;
             line-height: 1;
-            transition: transform 0.2s ease; /* Animasi putar */
+            transition: transform 0.2s ease;
             display: inline-block;
         }
 
-        /* INDIKATOR SWIPE (Visual Feedback) */
         .swipe-hint {
             position: absolute;
-            color: rgba(150,150,150, 0.3);
+            color: rgba(150,150,150,0.3);
             font-size: 5rem;
             opacity: 0;
             transform: scale(0.5);
-            transition: 0.3s;
+            transition: all 0.3s ease;
             pointer-events: none;
         }
         .swipe-hint.show { opacity: 1; transform: scale(1.2); }
 
-        /* SCREENS */
         .screen {
-            position: absolute; width: 100%; height: 100%;
+            position: absolute;
+            inset: 0;
             background: var(--bg);
             display: none;
             flex-direction: column;
@@ -89,39 +121,52 @@
         .screen.active { display: flex; }
 
         .btn {
-            background: var(--accent); color: white;
-            border: none; padding: 15px 40px;
-            font-size: 1.2rem; border-radius: 50px;
-            margin-top: 20px; cursor: pointer;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            margin-top: 20px;
+            cursor: pointer;
             font-weight: bold;
-            box-shadow: 0 5px 15px rgba(41, 128, 185, 0.4);
+            box-shadow: 0 5px 15px rgba(41,128,185,0.4);
+            transition: transform 0.1s;
         }
         .btn:active { transform: scale(0.95); }
 
-        /* AREA IKLAN */
         #ad-container {
             height: var(--ad-h);
             min-height: var(--ad-h);
             background: #000;
-            display: flex; justify-content: center; align-items: center;
-            z-index: 999; border-top: 1px solid #555;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-top: 1px solid #555;
+            z-index: 999;
         }
-        .ad-scale { transform: scale(0.75); }
+        .ad-scale { transform: scale(0.75); transform-origin: center; }
 
-        /* ANIMASI */
-        .shake { animation: shake 0.3s; color: var(--wrong) !important; }
-        @keyframes shake { 0%, 100% {transform:translateX(0)} 25%{transform:translateX(-10px)} 75%{transform:translateX(10px)} }
+        .shake { animation: shake 0.4s; color: var(--wrong) !important; }
+        @keyframes shake {
+            0%,100% {transform:translateX(0)}
+            25% {transform:translateX(-12px)}
+            75% {transform:translateX(12px)}
+        }
+
+        /* Force fullscreen saat game berjalan */
+        #s-game.active ~ #ad-container { position: fixed; bottom: 0; left: 0; right: 0; }
     </style>
 </head>
 <body>
-
+<div id="app-container">
     <!-- SCREEN 1: MENU -->
     <div id="s-menu" class="screen active">
         <div style="font-size:5rem; font-weight:900; margin-bottom:10px;">E</div>
         <h1>E-Swipe Test</h1>
         <p>Tes Ketajaman Visual & Refleks.</p>
-        <div style="background:#f0f0f0; padding:15px; border-radius:10px; color:#333; margin:10px 0; font-size:0.9rem;">
-            👆 <b>CARA MAIN:</b><br>
+        <div style="background:#f0f0f0;padding:15px;border-radius:10px;color:#333;margin:10px 0;font-size:0.9rem;max-width:90%;">
+            <b>CARA MAIN:</b><br>
             Geser layar (Swipe) sesuai arah kaki huruf <b>E</b> menghadap.<br>
             (Atas, Bawah, Kiri, atau Kanan)
         </div>
@@ -130,21 +175,17 @@
 
     <!-- SCREEN 2: GAMEPLAY -->
     <div id="s-game" class="screen">
-        <div id="top-bar" style="width:100%; position:absolute; top:0;">
+        <div id="top-bar">
             <span style="color:var(--accent)">Level <span id="ui-lvl">1</span></span>
             <span>❤️ <span id="ui-life">3</span></span>
             <span style="color:#888">Skor: <span id="ui-score">0</span></span>
         </div>
-
         <div id="game-area">
-            <!-- Huruf E -->
-            <div id="tumbling-e" style="font-size: 150px;">E</div>
-            
-            <!-- Visual Feedback -->
-            <div id="hint-up" class="swipe-hint" style="top:20%">⬆️</div>
-            <div id="hint-down" class="swipe-hint" style="bottom:20%">⬇️</div>
-            <div id="hint-left" class="swipe-hint" style="left:10%">⬅️</div>
-            <div id="hint-right" class="swipe-hint" style="right:10%">➡️</div>
+            <div id="tumbling-e" style="font-size:150px;">E</div>
+            <div id="hint-up" class="swipe-hint" style="top:20%">Up Arrow</div>
+            <div id="hint-down" class="swipe-hint" style="bottom:20%">Down Arrow</div>
+            <div id="hint-left" class="swipe-hint" style="left:10%">Left Arrow</div>
+            <div id="hint-right" class="swipe-hint" style="right:10%">Right Arrow</div>
         </div>
     </div>
 
@@ -152,168 +193,123 @@
     <div id="s-over" class="screen">
         <h2 style="color:var(--wrong)">GAME OVER</h2>
         <p>Penglihatan Anda setajam:</p>
-        <h1 id="final-lvl" style="font-size:3rem; margin:10px 0;">Level 5</h1>
+        <h1 id="final-lvl" style="font-size:3rem;margin:10px 0;">Level 5</h1>
         <p id="feedback">Cukup Baik</p>
         <button class="btn" onclick="game.start()">ULANGI</button>
     </div>
+</div>
 
-    <!-- IKLAN FOOTER -->
-    <div id="ad-container">
-        <div class="ad-scale">
-            <script type="text/javascript">
-                atOptions = {
-                    'key' : '2a28cd5411ae53a35cf4ec828d845d19',
-                    'format' : 'iframe',
-                    'height' : 60,
-                    'width' : 468,
-                    'params' : {}
-                };
-            </script>
-            <script type="text/javascript" src="https://www.highperformanceformat.com/2a28cd5411ae53a35cf4ec828d845d19/invoke.js"></script>
-        </div>
+<!-- IKLAN FOOTER (di luar app-container agar tetap di bawah meski fullscreen) -->
+<div id="ad-container">
+    <div class="ad-scale">
+        <script type="text/javascript">
+            atOptions = {
+                'key' : '2a28cd5411ae53a35cf4ec828d845d19',
+                'format' : 'iframe',
+                'height' : 60,
+                'width' : 468,
+                'params' : {}
+            };
+        </script>
+        <script type="text/javascript" src="//www.highperformanceformat.com/2a28cd5411ae53a35cf4ec828d845d19/invoke.js"></script>
     </div>
+</div>
 
-    <script>
-        const game = {
-            level: 1,
-            score: 0,
-            lives: 3,
-            currentDir: 0, // 0:Right, 1:Down, 2:Left, 3:Up
-            fontSize: 150,
-            
-            // Element
-            elE: document.getElementById('tumbling-e'),
-            
-            start: function() {
-                this.level = 1;
-                this.score = 0;
-                this.lives = 3;
-                this.fontSize = 150;
-                
-                this.updateUI();
-                this.screens('s-game');
-                this.nextRound();
-            },
+<script>
+    // Pastikan tinggi selalu 100% bahkan setelah resize (notch, keyboard, dll)
+    function resizeFix() {
+        const vh = window.innerHeight;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+        document.getElementById('app-container').style.height = `${vh}px`;
+    }
+    window.addEventListener('resize', resizeFix);
+    window.addEventListener('orientationchange', () => setTimeout(resizeFix, 100));
+    resizeFix();
 
-            nextRound: function() {
-                // 1. Acak Arah (0-3)
-                // Sudut Rotasi: 0deg (Kanan), 90deg (Bawah), 180deg (Kiri), 270deg (Atas) -- Standar Huruf E
-                this.currentDir = Math.floor(Math.random() * 4);
-                
-                // Arah default E adalah ke KANAN. 
-                // Rotasi: 0=Right, 90=Down, 180=Left, 270=Up
-                let rotation = this.currentDir * 90; 
-                
-                this.elE.style.transform = `rotate(${rotation}deg)`;
-                this.elE.style.color = "var(--text)"; // Reset warna merah
-                this.elE.classList.remove('shake');
+    const game = {
+        level: 1, score: 0, lives: 3, currentDir: 0,
+        elE: document.getElementById('tumbling-e'),
 
-                // 2. Kecilkan Ukuran (Makin tinggi level, makin kecil)
-                // Rumus: Turun 5px setiap level, min 10px
-                let newSize = Math.max(10, 150 - (this.level * 4));
-                this.elE.style.fontSize = newSize + "px";
-            },
+        start() {
+            this.level = 1; this.score = 0; this.lives = 3;
+            this.updateUI();
+            this.screens('s-game');
+            this.nextRound();
+        },
+        nextRound() {
+            this.currentDir = Math.floor(Math.random() * 4);
+            this.elE.style.transform = `rotate(${this.currentDir * 90}deg)`;
+            this.elE.style.color = "var(--text)";
+            this.elE.classList.remove('shake');
 
-            checkSwipe: function(swipeDir) {
-                // Mapping Swipe ke Arah Rotasi
-                // Swipe: 'right', 'down', 'left', 'up'
-                // Logic Game: 0=Right, 1=Down, 2=Left, 3=Up
-                
-                let playerInput = -1;
-                if(swipeDir === 'right') playerInput = 0;
-                if(swipeDir === 'down') playerInput = 1;
-                if(swipeDir === 'left') playerInput = 2;
-                if(swipeDir === 'up') playerInput = 3;
+            const newSize = Math.max(20, 150 - (this.level - 1) * 4);
+            this.elE.style.fontSize = newSize + "px";
+        },
+        checkSwipe(dir) {
+            const map = { right:0, down:1, left:2, up:3 };
+            const input = map[dir];
 
-                if(playerInput === this.currentDir) {
-                    // BENAR
-                    this.score += 10;
-                    this.level++;
-                    this.showFeedback(swipeDir);
-                    
-                    // Delay sedikit agar animasi terlihat
-                    setTimeout(() => this.nextRound(), 200);
-                } else {
-                    // SALAH
-                    this.lives--;
-                    this.elE.classList.add('shake'); // Animasi getar
-                    navigator.vibrate && navigator.vibrate(200); // Getar HP
-                    
-                    if(this.lives <= 0) {
-                        this.gameOver();
-                    } else {
-                        this.updateUI();
-                    }
-                }
-                this.updateUI();
-            },
-
-            showFeedback: function(dir) {
-                // Tampilkan icon arah sebentar
-                const el = document.getElementById('hint-'+dir);
-                el.classList.add('show');
-                setTimeout(() => el.classList.remove('show'), 300);
-            },
-
-            gameOver: function() {
-                document.getElementById('final-lvl').innerText = "Level " + this.level;
-                
-                let fb = "Mata Lelah?";
-                if(this.level > 10) fb = "Cukup Baik";
-                if(this.level > 20) fb = "Sangat Tajam!";
-                if(this.level > 30) fb = "Mata Sniper!";
-                
-                document.getElementById('feedback').innerText = fb;
-                this.screens('s-over');
-            },
-
-            updateUI: function() {
-                document.getElementById('ui-lvl').innerText = this.level;
-                document.getElementById('ui-score').innerText = this.score;
-                document.getElementById('ui-life').innerText = this.lives;
-            },
-
-            screens: function(id) {
-                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-                document.getElementById(id).classList.add('active');
-            }
-        };
-
-        /* --- SWIPE DETECTION ENGINE --- */
-        let touchStartX = 0;
-        let touchStartY = 0;
-        const gameArea = document.getElementById('game-area');
-
-        gameArea.addEventListener('touchstart', function(e) {
-            touchStartX = e.changedTouches[0].screenX;
-            touchStartY = e.changedTouches[0].screenY;
-        }, false);
-
-        gameArea.addEventListener('touchend', function(e) {
-            let touchEndX = e.changedTouches[0].screenX;
-            let touchEndY = e.changedTouches[0].screenY;
-            handleGesture(touchStartX, touchStartY, touchEndX, touchEndY);
-        }, false);
-
-        function handleGesture(startX, startY, endX, endY) {
-            let xDiff = endX - startX;
-            let yDiff = endY - startY;
-            let threshold = 30; // Min geser 30px agar dianggap swipe
-
-            if (Math.abs(xDiff) > Math.abs(yDiff)) {
-                // Gerakan Horizontal
-                if (Math.abs(xDiff) > threshold) {
-                    if (xDiff > 0) game.checkSwipe('right');
-                    else game.checkSwipe('left');
-                }
+            if (input === this.currentDir) {
+                this.score += 10;
+                this.level++;
+                this.showFeedback(dir);
+                setTimeout(() => this.nextRound(), 250);
             } else {
-                // Gerakan Vertikal
-                if (Math.abs(yDiff) > threshold) {
-                    if (yDiff > 0) game.checkSwipe('down');
-                    else game.checkSwipe('up');
-                }
+                this.lives--;
+                this.elE.classList.add('shake');
+                if (navigator.vibrate) navigator.vibrate(200);
+                if (this.lives <= 0) setTimeout(() => this.gameOver(), 400);
             }
+            this.updateUI();
+        },
+        showFeedback(dir) {
+            const el = document.getElementById('hint-' + dir);
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 300);
+        },
+        gameOver() {
+            document.getElementById('final-lvl').innerText = "Level " + this.level;
+            let fb = "Mata Lelah?";
+            if (this.level > 30) fb = "Mata Sniper!";
+            else if (this.level > 20) fb = "Sangat Tajam!";
+            else if (this.level > 10) fb = "Cukup Baik";
+            document.getElementById('feedback').innerText = fb;
+            this.screens('s-over');
+        },
+        updateUI() {
+            document.getElementById('ui-lvl').innerText = this.level;
+            document.getElementById('ui-score').innerText = this.score;
+            document.getElementById('ui-life').innerText = this.lives;
+        },
+        screens(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
         }
-    </script>
+    };
+
+    // Swipe detection (tetap sama, sudah sangat bagus)
+    let startX, startY;
+    const area = document.getElementById('game-area');
+    area.addEventListener('touchstart', e => {
+        startX = e.changedTouches[0].screenX;
+        startY = e.changedTouches[0].screenY;
+    }, {passive: true});
+
+    area.addEventListener('touchend', e => {
+        if (!startX || !startY) return;
+        const endX = e.changedTouches[0].screenX;
+        const endY = e.changedTouches[0].screenY;
+        const diffX = endX - startX;
+        const diffY = endY - startY;
+        const thresh = 40;
+
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+            if (Math.abs(diffX) > thresh) game.checkSwipe(diffX > 0 ? 'right' : 'left');
+        } else {
+            if (Math.abs(diffY) > thresh) game.checkSwipe(diffY > 0 ? 'down' : 'up');
+        }
+        startX = startY = null;
+    }, {passive: true});
+</script>
 </body>
 </html>
