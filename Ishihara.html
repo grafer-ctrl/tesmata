@@ -5,124 +5,166 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ishihara Color Test</title>
     <style>
-        /* --- CLEAN MEDICAL THEME --- */
+        /* --- VARIABLES (CONSISTENT WITH DASHBOARD) --- */
         :root {
             --bg: #f8f9fa;
-            --card: #ffffff;
-            --text: #2d3436;
-            --accent: #0984e3;
+            --text-main: #2d3436;
+            --text-sub: #636e72;
+            --primary: #0984e3;
+            --accent: #00b894;
+            --card-bg: #ffffff;
             --ad-h: 75px;
+            --shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        /* DARK MODE SUPPORT */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #121212;
+                --text-main: #dfe6e9;
+                --text-sub: #b2bec3;
+                --primary: #74b9ff;
+                --card-bg: #1e1e1e;
+            }
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
         
         body {
             margin: 0; padding: 0;
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
             background-color: var(--bg);
-            color: var(--text);
+            color: var(--text-main);
             height: 100vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
 
-        /* MAIN APP CONTAINER */
-        #app-container {
+        /* --- GAME AREA (FLEX TOP) --- */
+        #game-area {
             flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
             position: relative;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
         }
 
-        /* CANVAS WRAPPER (CIRCLE) */
-        #canvas-wrapper {
-            position: relative;
-            width: 300px; height: 300px;
-            background: var(--card);
-            border-radius: 50%;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            display: flex;
+        /* --- SCREENS --- */
+        .screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; flex-direction: column;
             align-items: center; justify-content: center;
-            margin-bottom: 25px;
+            padding: 20px; text-align: center;
+            background-color: var(--bg);
+            z-index: 10;
+        }
+        .screen.active { display: flex; }
+
+        /* --- UI COMPONENTS --- */
+        h1 { 
+            font-size: 2rem; margin-bottom: 10px; 
+            color: var(--primary); font-weight: 800;
         }
         
+        p { 
+            color: var(--text-sub); margin-bottom: 25px; 
+            line-height: 1.6; max-width: 400px; font-size: 0.95rem;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white; border: none; padding: 15px 40px;
+            font-size: 1.1rem; border-radius: 50px;
+            font-weight: bold; cursor: pointer;
+            box-shadow: 0 5px 15px rgba(9, 132, 227, 0.3);
+            transition: transform 0.1s;
+        }
+        .btn:active { transform: scale(0.95); }
+        
+        .btn-outline {
+            background: transparent; border: 2px solid var(--primary);
+            color: var(--primary); margin-top: 10px;
+            box-shadow: none;
+        }
+
+        /* --- ISHIHARA CANVAS --- */
+        #canvas-wrapper {
+            width: 300px; height: 300px;
+            background: var(--card-bg);
+            border-radius: 50%;
+            box-shadow: var(--shadow);
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 25px;
+            border: 5px solid rgba(255,255,255,0.5);
+        }
         canvas { border-radius: 50%; }
 
-        /* INPUTS */
-        .input-area { display: flex; gap: 10px; width: 300px; }
+        /* --- INPUTS --- */
+        .input-group {
+            display: flex; gap: 10px; width: 100%; max-width: 300px;
+        }
         
         input[type="tel"] {
             flex: 1; padding: 15px;
             font-size: 1.5rem; text-align: center;
-            border: 2px solid #dfe6e9; border-radius: 10px;
-            outline: none; color: var(--text);
+            border: 2px solid rgba(0,0,0,0.1); border-radius: 15px;
+            outline: none; color: var(--text-main);
+            background: var(--card-bg);
+            font-weight: bold;
         }
-        input[type="tel"]:focus { border-color: var(--accent); }
+        input[type="tel"]:focus { border-color: var(--primary); }
 
-        .btn {
-            background-color: var(--accent); color: white;
-            border: none; padding: 0 30px;
-            font-size: 1.1rem; border-radius: 10px;
-            cursor: pointer; font-weight: bold;
-        }
-        .btn:active { transform: scale(0.96); }
+        .btn-ok { padding: 0 25px; border-radius: 15px; }
 
-        /* SCREENS */
-        .screen {
-            position: absolute; width: 100%; height: 100%;
-            background: var(--bg);
-            display: none;
-            flex-direction: column;
-            align-items: center; justify-content: center;
-            z-index: 10; text-align: center; padding: 20px;
-        }
-        .screen.active { display: flex; }
-
-        h1 { font-size: 2rem; margin-bottom: 10px; color: var(--text); }
-        p { color: #636e72; margin-bottom: 25px; max-width: 350px; line-height: 1.5; }
-
-        /* AD FOOTER */
-        #ad-footer {
-            height: var(--ad-h); background: #fff;
-            border-top: 1px solid #e0e0e0;
+        /* --- AD AREA (FIXED BOTTOM) --- */
+        #ad-area {
+            height: var(--ad-h);
+            min-height: var(--ad-h);
+            width: 100%;
+            background-color: var(--card-bg); /* Match card bg for clean look */
             display: flex; justify-content: center; align-items: center;
-            z-index: 100;
+            border-top: 1px solid rgba(0,0,0,0.05);
+            z-index: 999;
         }
-        .ad-scale { transform: scale(0.75); }
+        
+        .ad-scaler { transform: scale(0.75); }
+        @media(min-width: 400px) { .ad-scaler { transform: scale(0.85); } }
+        @media(min-width: 500px) { .ad-scaler { transform: scale(1); } }
 
     </style>
 </head>
 <body>
 
-    <!-- GAME AREA -->
-    <div id="app-container">
+    <div id="game-area">
         
         <!-- HOME SCREEN -->
         <div id="s-home" class="screen active">
-            <div style="font-size:4rem; margin-bottom:15px;">🎨</div>
-            <h1>Color Blind Test</h1>
-            <p>Identify the hidden number inside the colored dot pattern (Ishihara Plate).</p>
-            <button class="btn" style="padding:15px 50px" onclick="game.start()">Start Test</button>
+            <div style="font-size:4.5rem; margin-bottom:15px;">🎨</div>
+            <h1>Ishihara Test</h1>
+            <p>Standard color blindness test.<br>Identify the hidden number inside the colored dot patterns.</p>
+            <button class="btn" onclick="game.start()">Start Test</button>
+            <br>
+            <a href="index.html" style="color:var(--text-sub); font-size:0.9rem; margin-top:20px; display:block;">&larr; Back to Dashboard</a>
         </div>
 
         <!-- PLAY SCREEN -->
         <div id="s-play" class="screen">
-            <div style="margin-bottom:15px; font-weight:bold; color:#b2bec3;">
-                Plate <span id="ui-lvl">1</span> / 10
+            <div style="margin-bottom:15px; font-weight:bold; color:var(--text-sub); text-transform: uppercase; letter-spacing: 1px;">
+                Plate <span id="ui-lvl" style="color:var(--primary)">1</span> / 10
             </div>
             
             <div id="canvas-wrapper">
                 <canvas id="gameCanvas" width="300" height="300"></canvas>
             </div>
 
-            <p>Type the number you see:</p>
+            <p style="margin-bottom:15px;">What number do you see?</p>
             
-            <div class="input-area">
+            <div class="input-group">
                 <input type="tel" id="ans-input" placeholder="?" maxlength="2" autocomplete="off">
-                <button class="btn" onclick="game.check()">OK</button>
+                <button class="btn btn-ok" onclick="game.check()">OK</button>
             </div>
         </div>
 
@@ -130,18 +172,22 @@
         <div id="s-result" class="screen">
             <div style="font-size:4rem; margin-bottom:10px;">👁️</div>
             <h2>Analysis Complete</h2>
-            <h1 id="final-score" style="font-size:3rem; margin:10px 0; color:var(--accent)">0%</h1>
+            <h1 id="final-score" style="font-size:3.5rem; margin:10px 0; color:var(--primary)">0%</h1>
             <p id="final-msg">Analyzing...</p>
-            <button class="btn" style="padding:15px 40px; margin-top:10px;" onclick="game.start()">Retest</button>
+            
+            <div style="display:flex; flex-direction:column; gap:10px; width:100%; max-width:250px;">
+                <button class="btn" onclick="game.start()">Retest</button>
+                <a href="index.html" class="btn btn-outline" style="text-decoration:none; display:inline-block;">Home</a>
+            </div>
         </div>
 
     </div>
 
-    <!-- AD FOOTER -->
-    <div id="ad-footer">
-        <div class="ad-scale">
-             <!-- Adsterra Code -->
-             <script type="text/javascript">
+    <!-- AD AREA -->
+    <div id="ad-area">
+        <div class="ad-scaler">
+            <!-- Adsterra Code -->
+            <script type="text/javascript">
                 atOptions = {
                     'key' : '2a28cd5411ae53a35cf4ec828d845d19',
                     'format' : 'iframe',
@@ -154,12 +200,13 @@
         </div>
     </div>
 
+    <!-- GAME LOGIC -->
     <script>
         const game = {
             level: 1,
             score: 0,
             currentNum: 0,
-            maxLevels: 10, 
+            maxLevels: 10,
             
             canvas: document.getElementById('gameCanvas'),
             ctx: document.getElementById('gameCanvas').getContext('2d'),
@@ -184,10 +231,10 @@
 
             check: function() {
                 const val = parseInt(this.input.value);
-                if (!val) return; 
+                if (!val && val !== 0) return; // Prevent empty submit
 
                 if (val === this.currentNum) {
-                    this.score += 10; // 10 points per level
+                    this.score += 10; 
                 }
 
                 this.level++;
@@ -203,9 +250,9 @@
                 
                 let msg = "";
                 if(this.score === 100) msg = "Perfect Vision! No signs of color blindness.";
-                else if(this.score >= 70) msg = "Good. You might have missed some details due to screen glare.";
-                else if(this.score >= 40) msg = "Moderate Risk. You had trouble identifying several plates.";
-                else msg = "High Risk. Please consult an eye specialist for a formal diagnosis.";
+                else if(this.score >= 70) msg = "Good vision. Minor errors might be due to screen glare.";
+                else if(this.score >= 40) msg = "Moderate Risk. You had trouble with several plates.";
+                else msg = "High Risk. We recommend consulting an eye specialist.";
                 
                 document.getElementById('final-msg').innerText = msg;
                 this.switchScreen('s-result');
@@ -216,18 +263,18 @@
                 document.getElementById(id).classList.add('active');
             },
 
-            /* --- CANVAS DRAWING LOGIC --- */
+            /* --- ISHIHARA GENERATOR LOGIC --- */
             drawIshihara: function(number) {
                 const ctx = this.ctx;
                 const w = this.canvas.width;
                 const h = this.canvas.height;
                 
-                // 1. Clear
+                // Clear
                 ctx.clearRect(0, 0, w, h);
                 ctx.fillStyle = "#ffffff"; 
                 ctx.fillRect(0,0,w,h);
 
-                // 2. Create Mask in Memory
+                // Create Mask
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = w; tempCanvas.height = h;
                 const tCtx = tempCanvas.getContext('2d');
@@ -238,18 +285,15 @@
                 tCtx.textBaseline = "middle";
                 tCtx.fillText(number, w/2, h/2);
 
-                // 3. Color Palettes
-                // Background (Greens/Teals)
+                // Palettes
                 const bgColors = ["#81ecec", "#00cec9", "#55efc4", "#00b894", "#a29bfe"];
-                // Number (Reds/Oranges/Pinks)
                 const fgColors = ["#ff7675", "#d63031", "#fab1a0", "#e17055", "#fd79a8"];
 
-                // 4. Draw Dots
-                const dots = 2500; 
+                // Draw Dots
+                const dots = 2200; // Adjusted for performance
                 const radius = w / 2;
 
                 for (let i = 0; i < dots; i++) {
-                    // Random Polar Coordinates
                     const r = Math.sqrt(Math.random()) * (radius - 10);
                     const theta = Math.random() * 2 * Math.PI;
                     
@@ -257,7 +301,6 @@
                     const y = Math.floor(h/2 + r * Math.sin(theta));
                     const size = Math.random() * 3.5 + 1.5;
 
-                    // Check Pixel Mask
                     const pixel = tCtx.getImageData(x, y, 1, 1).data;
                     const isNumber = pixel[3] > 100; 
 
@@ -274,10 +317,21 @@
             }
         };
 
-        // Enable Enter Key
+        // Enter key to submit
         document.getElementById('ans-input').addEventListener("keyup", function(event) {
             if (event.key === "Enter") game.check();
         });
+    </script>
+
+    <!-- PWA SERVICE WORKER REGISTER -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('PWA Ready', reg.scope))
+                    .catch(err => console.log('PWA Error', err));
+            });
+        }
     </script>
 </body>
 </html>
