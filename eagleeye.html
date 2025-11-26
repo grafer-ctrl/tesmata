@@ -2,267 +2,343 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eagle Eye Challenge</title>
+    <!-- Meta Wajib untuk Android Studio / WebView -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#1a1a2e">
+    <title>Eagle Eye Pro</title>
+    
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+
     <style>
-        /* --- CSS RESET & LAYOUT --- */
+        /* --- 1. SETUP UTAMA AGAR SEPERTI APLIKASI --- */
         :root {
             --bg-dark: #1a1a2e;
             --bg-panel: #16213e;
             --accent: #e94560;
             --primary: #4cc9f0;
+            --success: #00b894;
             --text: #ffffff;
-            --ad-h: 75px;
+            --ad-height: 70px; /* Tinggi area iklan */
         }
 
-        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        * { 
+            box-sizing: border-box; 
+            user-select: none; 
+            -webkit-tap-highlight-color: transparent; 
+            outline: none;
+        }
 
-        body {
+        html, body {
             margin: 0; padding: 0;
+            width: 100%; height: 100%;
             background-color: var(--bg-dark);
             color: var(--text);
-            font-family: 'Segoe UI', Roboto, sans-serif;
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+            overflow: hidden; /* Mencegah scroll */
+            position: fixed; /* Kunci layar */
+            touch-action: none; /* Matikan gesture browser */
+        }
+
+        /* --- 2. LAYOUT MANAGEMENT --- */
+        #app-container {
             display: flex;
             flex-direction: column;
+            height: 100%;
+            width: 100%;
         }
 
-        /* GAME AREA (Top) */
-        #game-area {
-            flex: 1;
+        #game-view {
+            flex: 1; /* Mengambil sisa ruang di atas iklan */
             position: relative;
-            width: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
+            width: 100%;
             overflow: hidden;
         }
 
-        /* AD AREA (Bottom Fixed) */
-        #ad-area {
-            height: var(--ad-h);
-            min-height: var(--ad-h);
-            width: 100%;
-            background-color: #000;
+        #ad-view {
+            height: var(--ad-height);
+            min-height: var(--ad-height);
+            background: #000;
             display: flex;
             justify-content: center;
             align-items: center;
-            border-top: 2px solid #333;
+            border-top: 1px solid rgba(255,255,255,0.1);
             z-index: 999;
         }
 
-        /* SCREENS */
+        /* --- 3. UI SCREENS --- */
         .screen {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: none; flex-direction: column;
+            position: absolute; top: 0; left: 0; 
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             padding: 20px; text-align: center;
-            background-color: var(--bg-dark);
+            background: var(--bg-dark);
+            transition: opacity 0.3s;
+            opacity: 0; pointer-events: none; transform: scale(0.95);
         }
-        .screen.active { display: flex; z-index: 10; }
+        .screen.active { 
+            opacity: 1; pointer-events: auto; transform: scale(1);
+            z-index: 10;
+        }
 
-        /* UI COMPONENTS */
-        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; color: var(--primary); }
-        p { color: #aaa; margin-bottom: 1.5rem; line-height: 1.5; max-width: 400px; }
-        
+        /* Tipografi & Button */
+        h1 { margin: 0; font-size: 2.5rem; line-height: 1.2; background: linear-gradient(to right, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        p { color: #8d99ae; margin: 10px 0 30px; }
+
         .btn {
-            background: linear-gradient(45deg, #4361ee, #f72585);
-            color: #fff; border: none; padding: 15px 45px;
+            background: var(--primary);
+            color: var(--bg-dark);
+            border: none; padding: 16px 40px;
             font-size: 1.2rem; border-radius: 50px;
-            font-weight: bold; cursor: pointer;
-            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.4);
-            text-transform: uppercase;
+            font-weight: 700; cursor: pointer;
+            box-shadow: 0 10px 20px rgba(76, 201, 240, 0.3);
+            transition: transform 0.1s;
         }
-        .btn:active { transform: scale(0.95); }
+        .btn:active { transform: scale(0.92); }
 
-        /* HUD */
-        .hud {
-            width: 100%; max-width: 450px;
-            display: flex; justify-content: space-between;
-            background: var(--bg-panel); padding: 15px;
-            border-radius: 12px; margin-bottom: 20px;
-            font-weight: bold; font-size: 1.1rem;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        /* HUD (Head Up Display) */
+        .hud-bar {
+            position: absolute; top: 0; left: 0; width: 100%;
+            padding: 20px; display: flex; justify-content: space-between;
+            font-weight: 700; font-size: 1.2rem;
+            z-index: 20;
         }
+        .timer-box { color: var(--accent); display: flex; align-items: center; gap: 5px; }
+        .lvl-box { color: var(--text); background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 20px; }
 
-        /* GRID */
+        /* GAME GRID */
         #grid-container {
             display: grid; gap: 8px;
             background: var(--bg-panel); padding: 10px;
-            border-radius: 15px;
-            width: 100%; max-width: 400px;
-            aspect-ratio: 1;
+            border-radius: 20px;
+            width: 90%; max-width: 400px;
+            aspect-ratio: 1; /* Kotak sempurna */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
         }
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
 
-        .tile { border-radius: 8px; cursor: pointer; transition: 0.1s; }
-        .tile:active { opacity: 0.7; transform: scale(0.95); }
+        .tile {
+            border-radius: 12px; cursor: pointer;
+            position: relative; overflow: hidden;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+            transition: transform 0.1s, filter 0.1s;
+        }
+        .tile:active { transform: scale(0.9); }
+        
+        /* Iklan Scaler (Agar muat di HP kecil) */
+        .ad-scaler { transform-origin: center; transform: scale(0.7); }
+        @media(min-width: 380px) { .ad-scaler { transform: scale(0.85); } }
+        @media(min-width: 480px) { .ad-scaler { transform: scale(1); } }
 
-        /* Progress Bar */
-        .prog-track { width: 100%; height: 6px; background: #333; margin-bottom: 10px; max-width: 450px; border-radius: 3px;}
-        .prog-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; border-radius: 3px;}
-
-        /* AD SCALER */
-        .ad-scaler { transform: scale(0.75); }
-        @media(min-width: 400px) { .ad-scaler { transform: scale(0.85); } }
-        @media(min-width: 500px) { .ad-scaler { transform: scale(1); } }
+        /* Animation */
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-8px, 0, 0); }
+            40%, 60% { transform: translate3d(8px, 0, 0); }
+        }
 
     </style>
 </head>
 <body>
 
-    <div id="game-area">
+    <div id="app-container">
         
-        <!-- SCREEN: HOME -->
-        <div id="s-home" class="screen active">
-            <div style="font-size: 4rem; margin-bottom:10px;">🦅</div>
-            <h1>Eagle Eye</h1>
-            <p><b>Color Shade Challenge</b><br>Find the tile with a slightly different color.<br>Level 1 to 100.</p>
-            <button class="btn" onclick="game.start()">Start Game</button>
-        </div>
-
-        <!-- SCREEN: PLAY -->
-        <div id="s-play" class="screen">
-            <div class="prog-track"><div id="ui-prog" class="prog-fill"></div></div>
+        <!-- BAGIAN ATAS: GAME -->
+        <div id="game-view">
             
-            <div class="hud">
-                <div style="color:var(--primary)">Level <span id="ui-lvl">1</span></div>
-                <div style="color:var(--accent)">Time <span id="ui-time">60</span></div>
+            <!-- 1. SCREEN HOME -->
+            <div id="s-home" class="screen active">
+                <div style="font-size: 5rem; margin-bottom: 20px;">👁️</div>
+                <h1>Eagle Eye</h1>
+                <p>Can you spot the difference?<br>Test your color sensitivity.</p>
+                <button class="btn" onclick="game.start()">PLAY NOW</button>
             </div>
 
-            <div id="grid-container"></div>
-            <p style="font-size:0.9rem; margin-top:15px; opacity:0.7">Tap the odd color!</p>
+            <!-- 2. SCREEN PLAY -->
+            <div id="s-play" class="screen">
+                <div class="hud-bar">
+                    <div class="lvl-box">Lvl <span id="ui-lvl">1</span></div>
+                    <div class="timer-box">⏱️ <span id="ui-time">60</span>s</div>
+                </div>
+                
+                <div id="grid-container"></div>
+            </div>
+
+            <!-- 3. SCREEN GAME OVER -->
+            <div id="s-over" class="screen">
+                <h1 style="font-size: 2rem; color: var(--accent);">GAME OVER</h1>
+                <p>Your highest level:</p>
+                <div style="font-size: 5rem; font-weight: 700; margin: 0 0 30px; line-height:1;" id="ui-final-lvl">0</div>
+                <button class="btn" onclick="game.start()">RETRY</button>
+            </div>
+            
         </div>
 
-        <!-- SCREEN: GAME OVER -->
-        <div id="s-over" class="screen">
-            <h2 style="color:var(--accent)">TIME'S UP!</h2>
-            <p>You reached:</p>
-            <h1 id="ui-final-lvl" style="font-size:3.5rem; margin:10px 0; color:white">0</h1>
-            <p id="end-msg">Good effort.</p>
-            <button class="btn" onclick="game.start()">Try Again</button>
+        <!-- BAGIAN BAWAH: IKLAN (Fixed) -->
+        <div id="ad-view">
+            <div class="ad-scaler">
+                <script type="text/javascript">
+                    atOptions = {
+                        'key' : '2a28cd5411ae53a35cf4ec828d845d19',
+                        'format' : 'iframe',
+                        'height' : 60,
+                        'width' : 468,
+                        'params' : {}
+                    };
+                </script>
+                <script type="text/javascript" src="https://www.highperformanceformat.com/2a28cd5411ae53a35cf4ec828d845d19/invoke.js"></script>
+            </div>
         </div>
 
-        <!-- SCREEN: WIN -->
-        <div id="s-win" class="screen">
-            <h1 style="color:gold">LEGENDARY!</h1>
-            <p>You have perfect color sensitivity (Level 100).</p>
-            <button class="btn" onclick="game.start()">Play Again</button>
-        </div>
-
-    </div>
-
-    <!-- AD AREA -->
-    <div id="ad-area">
-        <div class="ad-scaler">
-            <script type="text/javascript">
-                atOptions = {
-                    'key' : '2a28cd5411ae53a35cf4ec828d845d19',
-                    'format' : 'iframe',
-                    'height' : 60,
-                    'width' : 468,
-                    'params' : {}
-                };
-            </script>
-            <script type="text/javascript" src="https://www.highperformanceformat.com/2a28cd5411ae53a35cf4ec828d845d19/invoke.js"></script>
-        </div>
     </div>
 
     <script>
+        // --- AUDIO ENGINE (Synthesizer Sederhana) ---
+        // Tidak perlu file MP3, suara dibuat oleh codingan agar ringan
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        const sfx = {
+            playTone: (freq, type, duration) => {
+                if(audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            },
+            correct: () => sfx.playTone(600, 'sine', 0.1),
+            wrong: () => sfx.playTone(150, 'sawtooth', 0.3),
+            over: () => {
+                sfx.playTone(300, 'triangle', 0.5);
+                setTimeout(() => sfx.playTone(200, 'triangle', 0.5), 300);
+            }
+        };
+
+        // --- GAME LOGIC ---
         const game = {
-            lvl: 1, maxLvl: 100, time: 60, timer: null,
+            lvl: 1,
+            time: 60,
+            timerInterval: null,
             elGrid: document.getElementById('grid-container'),
-            
+            isPlaying: false,
+
             start: function() {
                 this.lvl = 1;
                 this.time = 60;
-                this.switchScreen('s-play');
-                this.render();
-                this.updateUI();
+                this.isPlaying = true;
                 
-                if(this.timer) clearInterval(this.timer);
-                this.timer = setInterval(() => {
+                // Audio Init
+                if(audioCtx.state === 'suspended') audioCtx.resume();
+
+                this.switchScreen('s-play');
+                this.updateUI();
+                this.nextLevel();
+
+                // Timer Loop
+                if(this.timerInterval) clearInterval(this.timerInterval);
+                this.timerInterval = setInterval(() => {
                     this.time--;
                     this.updateUI();
-                    if(this.time <= 0) this.end('s-over');
+                    if(this.time <= 0) this.gameOver();
                 }, 1000);
             },
 
-            render: function() {
+            nextLevel: function() {
                 this.elGrid.innerHTML = '';
                 
-                // Grid Logic (2x2 to 6x6)
-                let size = 2;
-                if(this.lvl > 5) size = 3;
-                if(this.lvl > 15) size = 4;
-                if(this.lvl > 30) size = 5;
-                if(this.lvl > 50) size = 6;
+                // 1. Tentukan Grid (2x2 sampai 7x7)
+                let cols = 2;
+                if(this.lvl > 2) cols = 3;
+                if(this.lvl > 6) cols = 4;
+                if(this.lvl > 12) cols = 5;
+                if(this.lvl > 25) cols = 6;
+                if(this.lvl > 50) cols = 7;
 
-                this.elGrid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+                this.elGrid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
 
-                // Color Logic (HSL)
+                // 2. Tentukan Warna
                 const h = Math.floor(Math.random() * 360);
-                const s = 70 + Math.random() * 10;
-                const l = 40 + Math.random() * 30;
+                const s = 60 + Math.random() * 20; // 60-80%
+                const l = 40 + Math.random() * 40; // 40-80%
 
-                // Difficulty: diff decreases as level increases
-                // Lvl 1 = 25% diff, Lvl 100 = 2% diff
-                let diff = Math.max(2, 25 - (this.lvl * 0.23)); 
+                // 3. Kesulitan (Semakin level tinggi, opacity diff makin kecil)
+                // Opacity: 0.5 (mudah) -> 0.95 (susah banget)
+                let opacityDiff = 0.6 + (this.lvl * 0.005);
+                if(opacityDiff > 0.96) opacityDiff = 0.96;
 
-                const colBase = `hsl(${h}, ${s}%, ${l}%)`;
-                const colDiff = `hsl(${h}, ${s}%, ${l + diff}%)`;
+                const targetIndex = Math.floor(Math.random() * (cols * cols));
 
-                const total = size * size;
-                const target = Math.floor(Math.random() * total);
-
-                for(let i=0; i<total; i++) {
-                    const box = document.createElement('div');
-                    box.className = 'tile';
-                    box.style.backgroundColor = (i === target) ? colDiff : colBase;
+                for(let i=0; i < cols * cols; i++) {
+                    const tile = document.createElement('div');
+                    tile.className = 'tile';
+                    tile.style.backgroundColor = `hsl(${h}, ${s}%, ${l}%)`;
                     
-                    // Touch/Click Event
-                    box.onclick = () => {
-                        if(i === target) {
-                            // Correct
-                            this.lvl++;
-                            this.time += 2; // Bonus time
-                            if(this.lvl > this.maxLvl) this.end('s-win');
-                            else this.render();
-                        } else {
-                            // Wrong
-                            this.time -= 5; // Penalty
-                            this.elGrid.style.transform = "translateX(5px)";
-                            setTimeout(()=> this.elGrid.style.transform = "translateX(0)", 100);
-                        }
-                        this.updateUI();
-                        if(this.time <= 0) this.end('s-over');
-                    };
-                    this.elGrid.appendChild(box);
+                    // Tile yang beda
+                    if(i === targetIndex) {
+                        tile.style.opacity = opacityDiff; // Sedikit lebih transparan = beda warna
+                        tile.onclick = (e) => this.handleCorrect(e);
+                    } else {
+                        tile.onclick = () => this.handleWrong();
+                    }
+                    this.elGrid.appendChild(tile);
                 }
             },
 
-            updateUI: function() {
-                document.getElementById('ui-time').innerText = this.time;
-                document.getElementById('ui-lvl').innerText = this.lvl;
-                document.getElementById('ui-time').style.color = this.time < 10 ? '#ff4757' : '#e94560';
+            handleCorrect: function(e) {
+                if(!this.isPlaying) return;
+                sfx.correct();
+                this.lvl++;
+                // Bonus waktu maks 2 detik
+                if(this.time < 60) this.time += 1; 
                 
-                const pct = (this.lvl / this.maxLvl) * 100;
-                document.getElementById('ui-prog').style.width = pct + "%";
+                document.getElementById('ui-lvl').innerText = this.lvl;
+                this.nextLevel();
             },
 
-            end: function(screenId) {
-                clearInterval(this.timer);
-                document.getElementById('ui-final-lvl').innerText = this.lvl;
+            handleWrong: function() {
+                if(!this.isPlaying) return;
+                sfx.wrong();
                 
-                // Feedback Message
-                let msg = "Needs more practice.";
-                if(this.lvl > 20) msg = "Average Eyesight.";
-                if(this.lvl > 40) msg = "Sharp Vision!";
-                if(this.lvl > 70) msg = "Sniper Eyes!";
-                document.getElementById('end-msg').innerText = msg;
+                // Getaran HP (Android)
+                if(navigator.vibrate) navigator.vibrate(200);
 
-                this.switchScreen(screenId);
+                // Penalty Waktu
+                this.time -= 3;
+                this.updateUI();
+
+                // Efek visual Shake
+                this.elGrid.classList.add('shake');
+                setTimeout(() => this.elGrid.classList.remove('shake'), 400);
+
+                if(this.time <= 0) this.gameOver();
+            },
+
+            updateUI: function() {
+                const elTime = document.getElementById('ui-time');
+                elTime.innerText = this.time;
+                if(this.time <= 10) elTime.style.color = 'red';
+                else elTime.style.color = 'white';
+            },
+
+            gameOver: function() {
+                this.isPlaying = false;
+                clearInterval(this.timerInterval);
+                sfx.over();
+                if(navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 300]); // Getar panjang
+                
+                document.getElementById('ui-final-lvl').innerText = this.lvl;
+                this.switchScreen('s-over');
             },
 
             switchScreen: function(id) {
